@@ -44,7 +44,7 @@
 	<target depends="heatMapImageInit, package" name="create-zip">
 		<antcall target="prezip"/>
 	
-		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail">
+		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
 			<fileset dir="." includes="version.txt, manifest, ${appfile}"/>
 			<fileset dir="${libpath}">
 				<include name="trove.jar"/>
