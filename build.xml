@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [
         <!ENTITY zip_targets SYSTEM "file:../ziptargets.xml">
+   	  <!ENTITY common SYSTEM "file:../commontargets.xml">
 ]>
 <project basedir="." default="create-zip" name="HeatMapImage">
  &zip_targets;
-
-<target name="init">
-    <property name="dest.dir" value="../build"/>
-	</target>
+ &common;
 
 
 	<target name="create-zip" depends="init">
@@ -17,12 +15,10 @@
 				<exclude name="*.doc"/>
 				<exclude name="build.xml"/>
 			</fileset>
-			<fileset dir="../../build">
+			<fileset dir="${libpath}">
 				<include name="file_support.jar"/>
 				<include name="ui_support.jar"/>
 				<include name="gp-common.jar"/>
-			</fileset>
-			<fileset dir="../../lib">
 				<include name="colt.jar"/>
 				<include name="trove.jar"/>
 				<include name="jaxb-rt-1.0-ea.jar"/>
