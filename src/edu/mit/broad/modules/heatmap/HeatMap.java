@@ -445,7 +445,7 @@ public class HeatMap extends JPanel {
 			
 			
 			int y = 0; // if drawing border to column name need to change header
-			int bottomy = (bottom+1) * elementSize.height;
+			int bottomy = bottom * elementSize.height;
 			for (int column = left; column <= right; column++) {
 				int x = column * elementSize.width + insets.left;
 				g.drawLine(x, y, x, bottomy);
