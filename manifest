@@ -57,5 +57,5 @@ p3_name=output.file.format
 p5_default_value=8
 p3_description=The output file format
 p5_name=row.size
-commandLine=<java> -Djava.awt.headless=true <java_flags> -cp <libdir>bcg.jar<path.separator><libdir>trove.jar<path.separator><libdir>jama.jar<path.separator><libdir>jai_core.jar<path.separator><libdir>jai_codec.jar edu.mit.broad.microarray.gui.HeatMap <input.filename> <output.file> <output.file.format> -cw <column.size> -rw <row.size> -norm <normalization>
+commandLine=<java> -Djava.awt.headless=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>jai_core.jar<path.separator><libdir>jai_codec.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -cw <column.size> -rw <row.size> -norm <normalization>
 privacy=public
