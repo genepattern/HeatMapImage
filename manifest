@@ -1,19 +1,20 @@
 #HeatMapImage
-#Wed May 26 16:56:52 EDT 2004
+#Wed Jun 02 18:36:50 EDT 2004
 p8_prefix_when_specified=
 p5_optional=
 p6_type=java.lang.String
-commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>jai_core.jar<path.separator><libdir>jai_codec.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -cw <column.size> -rw <row.size> -norm <normalization> -grid <grid> -gridcolor <grid.color>
+commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>jai_core.jar<path.separator><libdir>jai_codec.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -cw <column.size> -rw <row.size> -norm <normalization> -grid <grid> -gridcolor <grid.color> -ra <row.annotations>
 description=Creates a heat map from a dataset
 p8_default_value=black
 p7_optional=on
 p3_description=The output file format
 pipelineModel=
 userid=GenePattern
+p9_optional=on
 p6_name=normalization
 p1_prefix_when_specified=
 p8_description=The grid color
-LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00032\:1
+LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00032\:0
 p6_prefix_when_specified=
 p7_type=java.lang.String
 author=Joshua Gould
@@ -23,6 +24,7 @@ p1_description=The input file - .res, .gct, .odf
 p7_name=grid
 version=1.0
 taskType=Image Creators
+p9_value=yes;no
 p4_prefix_when_specified=
 p8_type=java.lang.String
 p3_value=jpeg;png;tiff;bmp
@@ -30,6 +32,7 @@ p1_type=java.io.File
 p1_default_value=
 privacy=public
 os=any
+p9_prefix_when_specified=
 p3_default_value=jpeg
 p8_name=grid.color
 cpuType=any
@@ -39,15 +42,19 @@ p4_description=The size in pixels of an element along the x axis
 p2_optional=
 p8_value=0\:0\:0\=black;128\:128\:128\=grey;255\:255\:255\=white
 p5_default_value=8
+p9_type=java.lang.String
 p2_prefix_when_specified=
 p4_optional=
+p9_default_value=no
 p2_type=java.lang.String
 serializedModel=
 p6_optional=
 p7_prefix_when_specified=
 p3_type=java.lang.String
+p9_description=Whether to draw row annotations
 language=Java
 p8_optional=on
+p9_name=row.annotations
 className=edu.mit.wi.omnigene.service.analysis.genepattern.GenePatternAnalysisTask
 p2_name=output.file
 p2_value=
@@ -64,8 +71,8 @@ quality=production
 p6_value=row;none
 p5_description=The size in pixels of an element along the y axis
 p5_type=java.lang.Integer
-p1_TYPE=FILE
 JVMLevel=1.3
+p1_TYPE=FILE
 p4_default_value=8
 p1_optional=
 p2_default_value=<input.filename_basename>
