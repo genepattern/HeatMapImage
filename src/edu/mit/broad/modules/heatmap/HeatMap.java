@@ -623,7 +623,11 @@ public class HeatMap extends JPanel {
 			this.geneNameWidth = getMaxGeneNamesWidth(g);
 			width += 20 + this.geneNameWidth;
 		}
-		spaceAfterGeneNames = elementSize.width;
+		if(g!=null) {
+			FontMetrics fm = g.getFontMetrics();
+			spaceAfterGeneNames = fm.stringWidth("xxxx");
+		}
+		
 		if(showGeneAnnotations) {
 			this.maxGeneAnnotationsWidth = getMaxGeneDescriptionsWidth(g);
 			if(showGeneNames) {
