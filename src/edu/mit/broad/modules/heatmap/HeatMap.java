@@ -91,8 +91,8 @@ public class HeatMap extends JPanel {
 	private Font font;
 
 	private GeneMouseListener geneMouseListener = new GeneMouseListener();
-	BufferedImage posColorImage = createGradientImage(neutralColor, maxColor);
-	BufferedImage negColorImage = createGradientImage(minColor, neutralColor);
+	BufferedImage posColorImage;
+	BufferedImage negColorImage;
 
 	/** Whether to show gene annoations */
 	boolean showGeneAnnotations = false;
@@ -828,6 +828,8 @@ public class HeatMap extends JPanel {
 		this.normalization = _normalization;
 		if(normalization == NORMALIZATION_NONE) {
          getMinMax();
+         posColorImage = createGradientImage(neutralColor, maxColor);
+         negColorImage = createGradientImage(minColor, neutralColor);
 			this.header.setDrawColorBar(true);
 		} else {
 			this.header.setDrawColorBar(false);
