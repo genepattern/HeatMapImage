@@ -62,7 +62,9 @@ public class HeatMap extends JPanel {
 	int[] samplesOrder;
 	boolean showToolTipText = true;
 	boolean antiAliasing = true;
-
+	String fontFamilyName = "Dialog";
+	int fontStyle  = Font.PLAIN;
+	
 	static AlphaComposite SRC_OVER_COMPOSITE = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
 
 	/**  neutral color for absolute color scheme */
@@ -217,6 +219,20 @@ public class HeatMap extends JPanel {
 				gridLinesColor = createColor(args[++i]);
 			} else if(args[i].equals("-ra")) {
 				showGeneAnnotations = "yes".equalsIgnoreCase(args[++i]);
+			/*} else if(args[i].equals("-font-family")) {
+				fontFamily = args[++i];
+			} else if(args[i].equals("-font-style")) {
+				String temp = args[++i];
+				if("Plain".equalsIgnoreCase(temp)) {
+					fontStyle = Font.PLAIN;
+				} else if("BOLD".equalsIgnoreCase(temp)) {
+					
+				} else if("BOLDITALIC".equalsIgnoreCase(temp)) {
+					
+				} else {
+					exit("unknown value for -font-style");
+				}
+				*/
 			} else {
 				exit("unknown option " + args[i]);
 			}
@@ -367,11 +383,16 @@ public class HeatMap extends JPanel {
 				}
 				FontMetrics fm = g.getFontMetrics();
 				int descent = fm.getDescent();
+				
+				
 				for(int row = top; row < bottom; row++) {
-					int annY = (row + 1) * elementSize.height;
+				//	int annY = (row + 1) * elementSize.height;
+					int annY = (row ) * elementSize.height;
+
 					if(this.showGeneNames) {
 						String label = dataset.getRowName(row);
-						g.drawString(label, uniqX + insets.left, annY - descent);
+						// g.drawString(label, uniqX + insets.left, annY - descent);
+						g.drawString(label, uniqX + insets.left, annY + fm.getAscent());
 					}
 					if(showGeneAnnotations) {
 						int geneAnnotationX = uniqX + insets.left + geneNameWidth;
@@ -615,7 +636,7 @@ public class HeatMap extends JPanel {
 	 */
 	void updateSize(Graphics2D g) {
 		int fontHeight = Math.min(14, elementSize.height);
-		font = new Font("monospaced", Font.PLAIN, fontHeight);
+		font = new Font(fontFamilyName, fontStyle, fontHeight);
 		g.setFont(font);
 		setFont(font);
 		int width = elementSize.width * dataset.getColumnDimension() + 1 + insets.left;

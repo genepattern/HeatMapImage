@@ -182,7 +182,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			g.drawString(String.valueOf(heatMap.maxValue), width - textWidth + insets.left, IMAGE_HEIGHT + fHeight);
 		}
 
-		int h = -getSize().height + 5;
+		int h = -getSize().height + 8;
 		if(this.getColorBarHeight() > 0) {
 			h += COLOR_BAR_HEIGHT;
 		}
@@ -222,8 +222,8 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			g.rotate(-Math.PI / 2);
 			for(int sample = left; sample < right; sample++) {
 				String name = heatMap.dataset.getColumnName(heatMap.samplesOrder[sample]);
-				//System.out.println("h" + h + " descent " + descent + " left " + insets.left);
-				g.drawString(name, h, descent + heatMap.elementSize.width * sample + heatMap.elementSize.width / 2 + insets.left);
+				//g.drawString(name, h, hfm.getAscent() + heatMap.elementSize.width * sample + heatMap.elementSize.width / 2 + insets.left);
+				g.drawString(name, h, hfm.getAscent() + heatMap.elementSize.width * sample + insets.left);
 			}
 			g.rotate(Math.PI / 2);
 		}
@@ -245,7 +245,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 	 */
 	private void setElementWidth(int width) {
 		width = Math.min(width, 14);
-		font = new Font("monospaced", Font.PLAIN, width);
+		font = new Font(heatMap.fontFamilyName, heatMap.fontStyle, width);
 		setFont(font);
 	}
 
