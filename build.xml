@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project [
+        <!ENTITY zip_targets SYSTEM "file:../ziptargets.xml">
+]>
+<project basedir="." default="create-zip" name="HeatMapReporter">
+ &zip_targets;
+
+<target name="init">
+    <property name="dest.dir" value="../build"/>
+	</target>
+
+
+	<target name="create-zip" depends="init">
+		<antcall target="prezip"/>
+		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail">
+			<fileset dir=".">
+				<exclude name="*.doc"/>
+				<exclude name="build.xml"/>
+			</fileset>
+			<fileset dir="../../build">
+				<include name="file_support.jar"/>
+				<include name="ui_support.jar"/>
+				<include name="gp-common.jar"/>
+			</fileset>
+			<fileset dir="../../lib">
+				<include name="colt.jar"/>
+				<include name="trove.jar"/>
+			</fileset>
+			<fileset dir="../HierarchicalClusteringViewer">
+				<include name="hclviewer.jar"/>
+			</fileset>
+			
+			<fileset dir="../HierarchicalClusteringViewer/lib">
+				<include name="ij.jar"/>
+			</fileset>
+		</zip>
+		<antcall target="postzip"/>
+	</target>
+
+</project>
+
