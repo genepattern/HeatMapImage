@@ -70,8 +70,9 @@ public class HeatMap extends JPanel {
 
 	private HeatMapHeader header;
 
-	private boolean drawBorders = false;
-
+	private boolean drawBorders = true;
+	private Color borderColor = Color.black;
+	
 	private static Color missingColor = new Color(128, 128, 128);
 	private int geneNameWidth;
 	private Insets insets = new Insets(0, 10, 0, 0);
@@ -144,6 +145,30 @@ public class HeatMap extends JPanel {
 		System.exit(1);
 	}
 
+	
+	private static Color createColor(String triplet) {
+		String[] rgb = triplet.split(":");
+		if(rgb.length!=3) {
+			exit("Invalid rgb triplet " + triplet);
+		}
+		int r = 0, g = 0, b = 0;
+		try {
+			r = Integer.parseInt(rgb[0]);
+		} catch(NumberFormatException nfe) {
+			exit("Red component is not an integer " + triplet);	
+		}
+		try {
+			g = Integer.parseInt(rgb[1]);
+		} catch(NumberFormatException nfe) {
+			exit("Green component is not an integer " + triplet);	
+		}
+		try {
+			b = Integer.parseInt(rgb[2]);
+		} catch(NumberFormatException nfe) {
+			exit("Blue component is not an integer " + triplet);	
+		}
+		return new Color(r, g, b);
+	}
 
 	/**
 	 *  Create a heatmap image from the command line <input.filename>
@@ -166,6 +191,8 @@ public class HeatMap extends JPanel {
 		int columnWidth = 10;
 		int rowWidth = 10;
 		String normalization = "row";
+		Color gridLinesColor = Color.black;
+		boolean showGridLines = false;
 		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
 			if(args[i].equals("-cw")) {
 				columnWidth = Integer.parseInt(args[++i]);
@@ -176,11 +203,18 @@ public class HeatMap extends JPanel {
 				if(!normalization.equals("none") && !normalization.equals("row")) {
 					exit("Invalid normalization");
 				}
+			} else if(args[i].equals("-grid")) {
+				showGridLines = "yes".equalsIgnoreCase(args[++i]);
+			} else if(args[i].equals("-gridcolor")) {
+				// r:g:b triplet
+				gridLinesColor = createColor(args[++i]);
 			} else {
 				exit("unknown option " + args[i]);
 			}
 		}
-
+		heatMap.setShowGridLines(showGridLines);
+		heatMap.setGridLinesColor(gridLinesColor);
+		
 		heatMap.setElementSize(rowWidth, columnWidth);
 
 		if(normalization.equals("none")) { // default is row
@@ -268,6 +302,8 @@ public class HeatMap extends JPanel {
 			right = getRightIndex(bounds.x + bounds.width, samples);
 		}
 		Graphics2D g2 = (Graphics2D) g;
+		
+		
 		// draw rectangles
 		for(int row = top; row < bottom; row++) {
 			for(int column = left; column < right; column++) {
@@ -319,6 +355,24 @@ public class HeatMap extends JPanel {
 					int annY = (row + 1) * elementSize.height;
 					g.drawString(label, uniqX + insets.left, annY - descent);
 				}
+			}
+		}
+		
+		if(drawBorders) {
+			g.setColor(borderColor);
+			int leftx = left * elementSize.width + insets.left;
+			int rightx = right * elementSize.width + insets.left; // increase if drawing border to row name
+			for (int row = top; row <= bottom; row++) {
+				int y = row * elementSize.height;
+				g.drawLine(leftx, y, rightx, y);
+			}
+			
+			
+			int y = 0; // if drawing border to column name need to change header
+			int bottomy = (bottom+1) * elementSize.height;
+			for (int column = left; column <= right; column++) {
+				int x = column * elementSize.width + insets.left;
+				g.drawLine(x, y, x, bottomy);
 			}
 		}
 	}
@@ -583,10 +637,10 @@ public class HeatMap extends JPanel {
 		    g.setComposite(oldComposite);
 		    }
 		  */
-		if(this.drawBorders) {
-			g.setColor(Color.black);
+		/*if(this.drawBorders) {
+			g.setColor(borderColor);
 			g.drawRect(x, y, elementSize.width - 1, elementSize.height - 1);
-		}
+		} */
 	}
 
 
@@ -754,6 +808,16 @@ public class HeatMap extends JPanel {
 		notifyElementSizeChangedListeners(new ElementSizeChangedEvent(this, width, height));
 	}
 
+	public void setShowGridLines(boolean b) {
+		drawBorders = b;
+	}
+	
+	public void setGridLinesColor(Color c) {
+		if(c==null) {
+			throw new IllegalArgumentException("Grid lines color can not be null.");	
+		}
+		borderColor = c;		
+	}
 
 	public void setAbsoluteColorScheme(Color minColor, Color maxColor, Color neutralColor) {
 		posColorImage = createGradientImage(neutralColor, maxColor);
