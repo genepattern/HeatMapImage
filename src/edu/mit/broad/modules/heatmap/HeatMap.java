@@ -62,7 +62,7 @@ public class HeatMap extends JPanel {
 	int[] samplesOrder;
 	boolean showToolTipText = true;
 	boolean antiAliasing = true;
-	String fontFamilyName = "Dialog";
+	String fontFamilyName = "monospaced";
 	int fontStyle  = Font.PLAIN;
 	
 	static AlphaComposite SRC_OVER_COMPOSITE = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
@@ -386,13 +386,13 @@ public class HeatMap extends JPanel {
 				
 				
 				for(int row = top; row < bottom; row++) {
-				//	int annY = (row + 1) * elementSize.height;
-					int annY = (row ) * elementSize.height;
+					int annY = (row + 1) * elementSize.height;
+					//int annY = (row ) * elementSize.height;
 
 					if(this.showGeneNames) {
 						String label = dataset.getRowName(row);
-						// g.drawString(label, uniqX + insets.left, annY - descent);
-						g.drawString(label, uniqX + insets.left, annY + fm.getAscent());
+						g.drawString(label, uniqX + insets.left, annY - descent);
+						//g.drawString(label, uniqX + insets.left, annY + fm.getAscent());
 					}
 					if(showGeneAnnotations) {
 						int geneAnnotationX = uniqX + insets.left + geneNameWidth;
@@ -401,7 +401,7 @@ public class HeatMap extends JPanel {
 						}
 						String annot = (String) getRowDescription(row);
 						if(annot!=null) {
-							g.drawString(annot, geneAnnotationX, annY + fm.getAscent());
+							g.drawString(annot, geneAnnotationX, annY - descent);
 						}
 					}
 				}
