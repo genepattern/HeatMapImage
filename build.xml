@@ -55,6 +55,7 @@
 			<fileset dir="lib">
 				<include name="jai_codec.jar"/>
 				<include name="jai_core.jar"/>
+				<include name="epsgraphics.jar"/>
 			</fileset>
 			  
 			<fileset dir="." includes="*.pdf"/>
