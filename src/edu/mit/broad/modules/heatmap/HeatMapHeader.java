@@ -12,8 +12,8 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import edu.mit.broad.dataobj.*;
-import edu.mit.broad.dataobj.microarray.*;
+import org.genepattern.data.matrix.*;
+
 
 /**
  *  This class is used to render header of an experiment.
@@ -82,7 +82,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		FontMetrics hfm = g.getFontMetrics();
 		int maxHeight = 0;
 
-		final int size = heatMap.dataset.getColumnDimension();
+		final int size = heatMap.dataset.getColumnCount();
 		if(drawSampleNames) {
 			for(int feature = 0; feature < size; feature++) {
 				String name = heatMap.dataset.getColumnName(heatMap.getColumn(feature));
@@ -158,7 +158,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 	 * @param  g  Description of the Parameter
 	 */
 	private void drawHeader(Graphics2D g) {
-		final int samples = heatMap.dataset.getColumnDimension();
+		final int samples = heatMap.dataset.getColumnCount();
 		if(samples == 0) {
 			return;
 		}
@@ -289,7 +289,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			// if click on 0th cell, left = 0 and right = 1
 			lastIndex = firstIndex + 1;
 
-			if(firstIndex < 0 || lastIndex > heatMap.dataset.getColumnDimension()) {
+			if(firstIndex < 0 || lastIndex > heatMap.dataset.getColumnCount()) {
 				firstIndex = -1;
 				lastIndex = -1;
 			} else if(!yIsInRange(e)) {
@@ -306,8 +306,8 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			int index = heatMap.findColumn(e.getX());
 			if(index < 0) {
 				index = 0;
-			} else if(index > heatMap.dataset.getColumnDimension()) {
-				index = heatMap.dataset.getColumnDimension();
+			} else if(index > heatMap.dataset.getColumnCount()) {
+				index = heatMap.dataset.getColumnCount();
 			}
 
 			if(index > lastMouseEvent) {// when moving right

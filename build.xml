@@ -5,14 +5,10 @@
 	<property name="dirOffset" value="../"/>
 	<import file="${dirOffset}/commontargets.xml"/>
 
-	<target name="heatMapImageInit" depends="init">
+	<target name="_init" depends="init">
 		<property name="appfile" value="HeatMap.jar"/>
 		<property  name="inclds" value="edu/"/>
 		<path id="library.classpath">
-			<fileset dir="${libpath}">
-				<include name="*.jar"/>
-				<include name="*.zip"/>
-			</fileset>
 			<fileset dir="lib">
 				<include name="*.jar"/>
 				<include name="*.zip"/>
@@ -21,7 +17,7 @@
 	</target>
 
 
-	<target name="package" depends="heatMapImageInit, clean, compile">
+	<target name="package" depends="_init, clean, compile">
 		<jar basedir="." defaultexcludes="true" excludes="**/*.java, **/*.form, **/.nbattrs" includes="${inclds}" jarfile="${appfile}"></jar>
 	</target>
 
@@ -31,7 +27,7 @@
 		</delete>
 	</target>
 
-	<target name="compile" depends="heatMapImageInit">
+	<target name="compile" depends="_init">
 		<javac debug="true" defaultexcludes="true" deprecation="true" destdir="." includes="${inclds}" optimize="false" proceed="false" srcdir="src">
 			<classpath refid="library.classpath"/>
 		</javac>
@@ -41,21 +37,17 @@
 
 	<target depends="clean,compile" name="build"/>
 
-	<target depends="heatMapImageInit, package" name="create-zip">
+	<target depends="_init, package" name="create-zip">
 		<antcall target="prezip"/>
 	
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
 			<fileset dir="." includes="version.txt, manifest, ${appfile}"/>
-			<fileset dir="${libpath}">
-				<include name="trove.jar"/>
-				<include name="broad-cg.jar"/>
-				<include name="jakarta-oro-2.0.8.jar"/>
-				<include name="Jama-1.0.1.jar"/>
-			</fileset>
 			<fileset dir="lib">
-				<include name="jai_codec.jar"/>
-				<include name="jai_core.jar"/>
-				<include name="epsgraphics.jar"/>
+				<include name="*.jar"/>
+			</fileset>
+         <fileset dir="${libpath}">
+				<include name="trove.jar"/>
+            <include name="Jama-1.0.1.jar"/>
 			</fileset>
 			  
 			<fileset dir="." includes="*.pdf"/>

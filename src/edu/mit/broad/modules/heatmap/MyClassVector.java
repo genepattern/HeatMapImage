@@ -3,9 +3,8 @@ import java.awt.Color;
 import java.util.EventObject;
 import java.util.EventListener;
 import javax.swing.event.EventListenerList;
-import edu.mit.broad.dataobj.*;
-import edu.mit.broad.io.microarray.*;
-import edu.mit.broad.ui.*;
+import org.genepattern.data.matrix.*;
+
 public class MyClassVector {
 	public static int DEFAULT_CLASS_NUMBER = -1;
 	EventListenerList eventListeners = new EventListenerList();
@@ -38,14 +37,23 @@ public class MyClassVector {
 	}
 
 
-	public void addClass(int classNumber, String label) {
+/*	public void addClass(int classNumber, String label) {
 		cv.addClass(classNumber, label);
 		notifyListeners();
+	}*/
+
+   /*
+   public void setClass(int index, int classNumber) {
+		if(classNumber != DEFAULT_CLASS_NUMBER) {
+			hasLabels = true;
+		}
+		cv.setClass(index, classNumber);
+		notifyListeners();
 	}
+   */
 
-
-	public int levels() {
-		return cv.levels();
+	public int getClassCount() {
+		return cv.getClassCount();
 	}
 
 
@@ -55,13 +63,7 @@ public class MyClassVector {
 	}
 
 
-	public void setClass(int index, int classNumber) {
-		if(classNumber != DEFAULT_CLASS_NUMBER) {
-			hasLabels = true;
-		}
-		cv.setClass(index, classNumber);
-		notifyListeners();
-	}
+	
 
 
 	public Color getColorForIndex(int index) {
@@ -72,12 +74,6 @@ public class MyClassVector {
 	public String getClassName(int index) {
 		return cv.getClassName(index);
 	}
-
-
-	public int getLevel(int index) {
-		return cv.getLevel(index);
-	}
-
 
 	public int[] getIndices(int classNumber) {
 		return cv.getIndices(classNumber);
@@ -112,7 +108,7 @@ public class MyClassVector {
 	}
 	
 	public void writeClsFile(String fileName) throws java.io.IOException {
-		ClsWriter writer = new ClsWriter();
+		org.genepattern.io.expr.cls.ClsWriter writer = new org.genepattern.io.expr.cls.ClsWriter();
 		java.io.FileOutputStream fos = null;
 		try {
 		fos = new java.io.FileOutputStream(fileName);

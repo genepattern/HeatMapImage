@@ -9,11 +9,11 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import edu.mit.broad.dataobj.*;
-import edu.mit.broad.dataobj.microarray.*;
-import edu.mit.broad.gp.*;
-import edu.mit.broad.io.*;
-import edu.mit.broad.io.microarray.*;
+import org.genepattern.data.matrix.*;
+import org.genepattern.data.expr.*;
+import org.genepattern.module.*;
+import org.genepattern.io.*;
+import org.genepattern.io.expr.*;
 
 import com.sun.media.jai.codec.JPEGEncodeParam;
 import com.sun.media.jai.codec.ImageEncodeParam;
@@ -37,14 +37,15 @@ public class HeatMap extends JPanel {
 
 	/**  The url to go to when the user double clicks the gene name */
 	public final static String GENE_QUERY = "<query>";
-	Dataset dataset;
+	DoubleMatrix2D dataset;
+   String[] rowDescriptions;
 	ExpressionData data;
 	MyClassVector geneClassVector;
 	MyClassVector sampleClassVector;
 	/**  max value in the dataset */
-	double maxValue;
+	double maxValue = -Double.MAX_VALUE;
 	/**  min value in the dataset */
-	double minValue;
+	double minValue = Double.MAX_VALUE;
 
 	/**  width and height of one 'cell' in the heatmap */
 	Dimension elementSize = new Dimension(10, 10);
@@ -100,6 +101,7 @@ public class HeatMap extends JPanel {
 	/** The number of pixels after the gene name and before the gene annotation */
 	int spaceAfterGeneNames = 0;
 	
+   
 	public HeatMap(ExpressionData data) {
 		this(data, null, null);
 	}
@@ -115,14 +117,15 @@ public class HeatMap extends JPanel {
 	 */
 	public HeatMap(ExpressionData data, int[] genesOrder, int[] samplesOrder) {
 		this.data = data;
-		this.dataset = (Dataset) data.getExpressionMatrix();
-		this.geneClassVector = new MyClassVector(dataset.getRowDimension());
+		this.dataset = (DoubleMatrix2D) data.getExpressionMatrix();
+      this.rowDescriptions = data.getRowDescriptions();
+		this.geneClassVector = new MyClassVector(dataset.getRowCount());
 		geneClassVector.addClassVectorListener(new GeneClassVectorListener());
 		geneClassVector.setColor(geneClassVector.getClassName(0), Color.black);
-		this.sampleClassVector = new MyClassVector(dataset.getColumnDimension());
+		this.sampleClassVector = new MyClassVector(dataset.getColumnCount());
 		sampleClassVector.setColor(sampleClassVector.getClassName(0), Color.black);
-		this.genesOrder = genesOrder == null ? createDefaultOrdering(dataset.getRowDimension()) : genesOrder;
-		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(dataset.getColumnDimension()) : samplesOrder;
+		this.genesOrder = genesOrder == null ? createDefaultOrdering(dataset.getRowCount()) : genesOrder;
+		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(dataset.getColumnCount()) : samplesOrder;
 		this.header = new HeatMapHeader(this);
 		sampleClassVector.addClassVectorListener(header);
 		setNormalization(NORMALIZATION_ROW);
@@ -130,21 +133,11 @@ public class HeatMap extends JPanel {
 		Listener listener = new Listener();
 		addMouseListener(listener);
 		addMouseMotionListener(listener);
-		maxValue = -Double.MAX_VALUE;
-		minValue = Double.MAX_VALUE;
-		for(int i = 0, rows = dataset.getRowDimension(); i < rows; i++) {
-			for(int j = 0, columns = dataset.getColumnDimension(); j < columns; j++) {
-				double d = dataset.get(i, j);
-				maxValue = d > maxValue ? d : maxValue;
-				minValue = d < minValue ? d : minValue;
-			}
-		}
-
 		rowColorConverter = new RowColorConverter(COLOR_RESPONSE_LINEAR, dataset);
-		ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
-		toolTipManager.registerComponent(this);
-		addMouseListener(geneMouseListener);
-		addMouseMotionListener(geneMouseListener);
+	//	ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
+	//	toolTipManager.registerComponent(this);
+	//	addMouseListener(geneMouseListener);
+	//	addMouseMotionListener(geneMouseListener);
 	}
 
 
@@ -152,6 +145,18 @@ public class HeatMap extends JPanel {
 		System.err.println(s);
 		System.exit(1);
 	}
+   
+   private void getMinMax() {
+      maxValue = -Double.MAX_VALUE;
+		minValue = Double.MAX_VALUE;
+		for(int i = 0, rows = dataset.getRowCount(); i < rows; i++) {
+			for(int j = 0, columns = dataset.getColumnCount(); j < columns; j++) {
+				double d = dataset.get(i, j);
+				maxValue = d > maxValue ? d : maxValue;
+				minValue = d < minValue ? d : minValue;
+			}
+		}  
+   }
 
 	
 	private static Color createColor(String triplet) {
@@ -190,9 +195,9 @@ public class HeatMap extends JPanel {
 		String outputFileName = args[1];
 		String outputFileFormat = args[2];
 
-		ExpressionDataReader reader = GPUtil.getExpressionReader(inputFileName);
+		IExpressionDataReader reader = AnalysisUtil.getExpressionReader(inputFileName);
 		
-		ExpressionData data = GPUtil.read(reader, inputFileName);
+		ExpressionData data = (ExpressionData) AnalysisUtil.readExpressionData(reader, inputFileName, new ExpressionDataCreator());
 		
 		HeatMap heatMap = new HeatMap(data);
 
@@ -329,24 +334,20 @@ public class HeatMap extends JPanel {
 	}
 
 	private String getRowDescription(int row) {
-		java.util.List descriptions = data.getRowDescriptions();
-		if(descriptions!=null) {
-			return (String) descriptions.get(row);
-		}
-		return null;
+      return rowDescriptions[row];
 	}
 
 	void draw(Graphics2D g) {
-		final int samples = dataset.getColumnDimension();
+		final int samples = dataset.getColumnCount();
 		Rectangle bounds = g.getClipBounds();
 		int left = 0;
 		int right = samples;
 		int top = 0;
-		int bottom = dataset.getRowDimension();
+		int bottom = dataset.getRowCount();
 
 		if(bounds != null) {
 			top = getTopIndex(bounds.y);
-			bottom = getBottomIndex(bounds.y + bounds.height, dataset.getRowDimension());
+			bottom = getBottomIndex(bounds.y + bounds.height, dataset.getRowCount());
 			left = getLeftIndex(bounds.x);
 			right = getRightIndex(bounds.x + bounds.width, samples);
 		}
@@ -368,7 +369,7 @@ public class HeatMap extends JPanel {
 				drawGeneLabel(g, row, expWidth);
 			}
 		}
-		if(showGeneNames && geneMouseListener.topSelectedGeneIndex >= 0 && geneMouseListener.bottomSelectedGeneIndex <= dataset.getRowDimension()) {
+		if(showGeneNames && geneMouseListener.topSelectedGeneIndex >= 0 && geneMouseListener.bottomSelectedGeneIndex <= dataset.getRowCount()) {
 			g2.setColor(Color.yellow);
 			Composite oldComposite = g2.getComposite();
 			g2.setComposite(HeatMap.SRC_OVER_COMPOSITE);
@@ -468,12 +469,12 @@ public class HeatMap extends JPanel {
 
 
 	public void resetSamplesOrder() {
-		samplesOrder = createDefaultOrdering(dataset.getColumnDimension());
+		samplesOrder = createDefaultOrdering(dataset.getColumnCount());
 	}
 
 
 	public void resetGenesOrder() {
-		genesOrder = createDefaultOrdering(dataset.getRowDimension());
+		genesOrder = createDefaultOrdering(dataset.getRowCount());
 	}
 
 
@@ -654,7 +655,7 @@ public class HeatMap extends JPanel {
 		font = new Font(fontFamilyName, fontStyle, fontHeight);
 		g.setFont(font);
 		setFont(font);
-		int width = elementSize.width * dataset.getColumnDimension() + 1 + insets.left;
+		int width = elementSize.width * dataset.getColumnCount() + 1 + insets.left;
 		if(showGeneNames) {
 			this.geneNameWidth = getMaxGeneNamesWidth(g);
 			width += 20 + this.geneNameWidth;
@@ -677,7 +678,7 @@ public class HeatMap extends JPanel {
 		}
 
 		this.contentWidth = width;
-		this.height = elementSize.height * dataset.getRowDimension() + 1;
+		this.height = elementSize.height * dataset.getRowCount() + 1;
 		setSize(width, height);
 		setPreferredSize(new Dimension(width, height));
 	}
@@ -758,7 +759,7 @@ public class HeatMap extends JPanel {
 	 *@return          -1 if column was not found.
 	 */
 	int findColumn(int targetx) {
-		int xSize = dataset.getColumnDimension() * elementSize.width;
+		int xSize = dataset.getColumnCount() * elementSize.width;
 		if(targetx < insets.left) {
 			return -1;
 		}
@@ -778,7 +779,7 @@ public class HeatMap extends JPanel {
 	 *@return          -1 if row was not found.
 	 */
 	int findRow(int targety) {
-		int ySize = dataset.getRowDimension() * elementSize.height;
+		int ySize = dataset.getRowCount() * elementSize.height;
 		//	if(targety >= ySize || targety < 0) {
 		//		return -1;
 		//	}
@@ -800,8 +801,8 @@ public class HeatMap extends JPanel {
 
 	private void sortByClass(MyClassVector cv, int[] order) {
 		int index = 0;
-		for(int i = 0, length = cv.levels(); i < length; i++) {
-			int[] indices = cv.getIndices(cv.getLevel(i));
+		for(int i = 0, length = cv.getClassCount(); i < length; i++) {
+			int[] indices = cv.getIndices(i);
 			for(int j = 0; j < indices.length; j++) {
 				order[index++] = indices[j];
 			}
@@ -826,6 +827,7 @@ public class HeatMap extends JPanel {
 		}
 		this.normalization = _normalization;
 		if(normalization == NORMALIZATION_NONE) {
+         getMinMax();
 			this.header.setDrawColorBar(true);
 		} else {
 			this.header.setDrawColorBar(false);
@@ -991,7 +993,7 @@ public class HeatMap extends JPanel {
 	}
 
 
-	public Dataset getDataset() {
+	public DoubleMatrix2D getDoubleMatrix2D() {
 		return dataset;
 	}
 
@@ -1084,7 +1086,7 @@ public class HeatMap extends JPanel {
 		FontMetrics fm = g.getFontMetrics();
 		int max = 0;
 		String str;
-		for(int i = 0; i < dataset.getRowDimension(); i++) {
+		for(int i = 0; i < dataset.getRowCount(); i++) {
 			if(geneNames) {
 				str = dataset.getRowName(i);
 			} else {
@@ -1156,7 +1158,7 @@ public class HeatMap extends JPanel {
 
 
 	boolean isLegalColumn(int column) {
-		if(column < 0 || column > dataset.getColumnDimension() - 1) {
+		if(column < 0 || column > dataset.getColumnCount() - 1) {
 			return false;
 		}
 		return true;
@@ -1164,7 +1166,7 @@ public class HeatMap extends JPanel {
 
 
 	boolean isLegalRow(int row) {
-		if(row < 0 || row >= dataset.getRowDimension()) {
+		if(row < 0 || row >= dataset.getRowCount()) {
 			return false;
 		}
 		return true;
@@ -1191,7 +1193,7 @@ public class HeatMap extends JPanel {
 			topSelectedGeneIndex = bottomSelectedGeneIndex - 1;
 			lastYIndex = bottomSelectedGeneIndex;
 
-			int uniqX = elementSize.width * dataset.getColumnDimension() + 10;
+			int uniqX = elementSize.width * dataset.getColumnCount() + 10;
 			if(geneClassVector.hasNonDefaultLabels()) {
 				uniqX += elementSize.width;
 			}
@@ -1228,8 +1230,8 @@ public class HeatMap extends JPanel {
 			if(index < 0) {
 				index = 0;
 			}
-			if(index > dataset.getRowDimension()) {
-				index = dataset.getRowDimension();
+			if(index > dataset.getRowCount()) {
+				index = dataset.getRowCount();
 			}
 			// when moving up, update top index if click > top, else update bottom index
 
@@ -1288,7 +1290,7 @@ public class HeatMap extends JPanel {
 			int row = findRow(event.getY());
 
 			int clickCount = event.getClickCount();
-			if(clickCount >= 2 && column >= dataset.getColumnDimension() && isLegalRow(row)) { // double click on gene name
+			if(clickCount >= 2 && column >= dataset.getColumnCount() && isLegalRow(row)) { // double click on gene name
 				String geneName = dataset.getRowName(row);
 				String url = geneURL.replaceAll(GENE_QUERY, geneName);
 				try {
@@ -1308,7 +1310,7 @@ public class HeatMap extends JPanel {
 
 
 		public void mouseMoved(MouseEvent event) {
-			if(dataset.getColumnDimension() == 0 || event.isShiftDown()) {
+			if(dataset.getColumnCount() == 0 || event.isShiftDown()) {
 				return;
 			}
 			int column = findColumn(event.getX());

@@ -3,8 +3,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.text.NumberFormat;
 import javax.swing.*;
-import edu.mit.broad.dataobj.*;
-import edu.mit.broad.dataobj.microarray.*;
+import org.genepattern.data.matrix.*;
 
 /**
  *  converts float values to a color from a color map. Performs normalization by
@@ -20,7 +19,7 @@ public final class RowColorConverter {
 	 static int COLOR_RESPONSE_LOG = HeatMap.COLOR_RESPONSE_LOG;
 	 static int COLOR_RESPONSE_LINEAR = HeatMap.COLOR_RESPONSE_LINEAR;
 	int response = COLOR_RESPONSE_LINEAR;
-	Dataset dataset;
+	DoubleMatrix2D dataset;
 	/**  the last row for which max, min, and mean were computed */
 	int lastRow = -1;
 	static Color missingColor = new Color(128, 128, 128);
@@ -49,7 +48,7 @@ public final class RowColorConverter {
 	 * @param  dataset   Description of the Parameter
 	 * @param  response  Description of the Parameter
 	 */
-	public RowColorConverter(int[] colormap, int response, Dataset dataset) {
+	public RowColorConverter(int[] colormap, int response, DoubleMatrix2D dataset) {
 		Color[] colors = new Color[colormap.length];
 		for(int i = 0; i < colormap.length; ++i) {
 			colors[i] = new Color(colormap[i]);
@@ -75,7 +74,7 @@ public final class RowColorConverter {
 		
 	}
 
-	public RowColorConverter(int response, Dataset dataset) {
+	public RowColorConverter(int response, DoubleMatrix2D dataset) {
 		this(defaultColorMap, response, dataset);
 	}
 
@@ -171,7 +170,7 @@ public final class RowColorConverter {
 		float theMin;
 		float theMax;
 		float theMean;
-		int num = dataset.getColumnDimension();
+		int num = dataset.getColumnCount();
 		theMin = Float.POSITIVE_INFINITY;
 		theMax = Float.NEGATIVE_INFINITY;
 		theMean = 0;
