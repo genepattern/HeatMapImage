@@ -186,7 +186,7 @@ public class HeatMap extends JPanel {
 	/**
 	 *  Create a heatmap image from the command line <input.filename>
 	 *  <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
-	 *  <normalization>
+	 *  <normalization> -grid <grid> -ra <show.row.descriptions> -p <show.row.ids>
 	 *
 	 *@param  args  The command line arguments
 	 */
