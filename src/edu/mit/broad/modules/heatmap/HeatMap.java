@@ -91,7 +91,13 @@ public class HeatMap extends JPanel {
 	BufferedImage posColorImage = createGradientImage(neutralColor, maxColor);
 	BufferedImage negColorImage = createGradientImage(minColor, neutralColor);
 
-
+	/** Whether to show gene annoations */
+	boolean showGeneAnnotations = false;
+	/** The max width of the gene annotations */
+	int maxGeneAnnotationsWidth = 0;
+	/** The number of pixels after the gene name and before the gene annotation */
+	int spaceAfterGeneNames = 0;
+	
 	public HeatMap(ExpressionData data) {
 		this(data, null, null);
 	}
@@ -193,6 +199,7 @@ public class HeatMap extends JPanel {
 		String normalization = "row";
 		Color gridLinesColor = Color.black;
 		boolean showGridLines = false;
+		boolean showGeneAnnotations = false;
 		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
 			if(args[i].equals("-cw")) {
 				columnWidth = Integer.parseInt(args[++i]);
@@ -208,10 +215,13 @@ public class HeatMap extends JPanel {
 			} else if(args[i].equals("-gridcolor")) {
 				// r:g:b triplet
 				gridLinesColor = createColor(args[++i]);
+			} else if(args[i].equals("-ra")) {
+				showGeneAnnotations = "yes".equalsIgnoreCase(args[++i]);
 			} else {
 				exit("unknown option " + args[i]);
 			}
 		}
+		heatMap.showGeneAnnotations = showGeneAnnotations;
 		heatMap.setShowGridLines(showGridLines);
 		heatMap.setGridLinesColor(gridLinesColor);
 		
@@ -286,6 +296,13 @@ public class HeatMap extends JPanel {
 		draw((Graphics2D) g);
 	}
 
+	private String getRowDescription(int row) {
+		java.util.List descriptions = data.getRowDescriptions();
+		if(descriptions!=null) {
+			return (String) descriptions.get(row);
+		}
+		return null;
+	}
 
 	void draw(Graphics2D g) {
 		final int samples = dataset.getColumnDimension();
@@ -334,14 +351,14 @@ public class HeatMap extends JPanel {
 			g2.setColor(Color.black);
 			g2.setComposite(oldComposite);
 		}
-		// draw annotations
-		if(this.showGeneNames) {
+		// draw gene ids
+		if(this.showGeneNames || this.showGeneAnnotations) {
 			if(this.antiAliasing) {
 				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			}
 			if(right >= samples) {
-				String label = "";
+				
 				g.setColor(Color.black);
 				int uniqX = elementSize.width * samples + 10;
 
@@ -351,9 +368,22 @@ public class HeatMap extends JPanel {
 				FontMetrics fm = g.getFontMetrics();
 				int descent = fm.getDescent();
 				for(int row = top; row < bottom; row++) {
-					label = dataset.getRowName(row);
 					int annY = (row + 1) * elementSize.height;
-					g.drawString(label, uniqX + insets.left, annY - descent);
+					if(this.showGeneNames) {
+						String label = dataset.getRowName(row);
+						g.drawString(label, uniqX + insets.left, annY - descent);
+					}
+					if(showGeneAnnotations) {
+						int geneAnnotationX = uniqX + insets.left + geneNameWidth;
+						if(showGeneNames) {
+							geneAnnotationX += spaceAfterGeneNames;
+						}
+						String annot = (String) getRowDescription(row);
+						if(annot!=null) {
+							g.drawString(annot, geneAnnotationX, annY - descent);
+						}
+					}
+					// draw annotations
 				}
 			}
 		}
@@ -590,8 +620,16 @@ public class HeatMap extends JPanel {
 		setFont(font);
 		int width = elementSize.width * dataset.getColumnDimension() + 1 + insets.left;
 		if(showGeneNames) {
-			this.geneNameWidth = getMaxWidth(g);
+			this.geneNameWidth = getMaxGeneNamesWidth(g);
 			width += 20 + this.geneNameWidth;
+		}
+		spaceAfterGeneNames = elementSize.width;
+		if(showGeneAnnotations) {
+			this.maxGeneAnnotationsWidth = getMaxGeneDescriptionsWidth(g);
+			if(showGeneNames) {
+				width += spaceAfterGeneNames;	
+			}
+			width += this.maxGeneAnnotationsWidth;
 		}
 
 		if(geneClassVector.hasNonDefaultLabels()) {
@@ -981,13 +1019,21 @@ public class HeatMap extends JPanel {
 	}
 
 
+	int getMaxGeneNamesWidth(Graphics2D g) {
+		return getMaxWidth(g, true);
+	}
+	
+	int getMaxGeneDescriptionsWidth(Graphics2D g) {
+		return getMaxWidth(g, false);
+	}
+	
 	/**
 	 *  Returns max width of annotation strings.
 	 *
 	 *@param  g  Description of the Parameter
 	 *@return    The maxWidth value
 	 */
-	int getMaxWidth(Graphics2D g) {
+	int getMaxWidth(Graphics2D g, boolean geneNames) {
 		if(g == null) {
 			return 0;
 		}
@@ -999,10 +1045,14 @@ public class HeatMap extends JPanel {
 		int max = 0;
 		String str;
 		for(int i = 0; i < dataset.getRowDimension(); i++) {
-			//str = data.getElementAttribute(getMultipleArrayDataRow(i), labelIndex);
-			str = dataset.getRowName(i);
-			// str = genename ? data.getGeneName(getMultipleArrayDataRow(i)) : data.getUniqueId(getMultipleArrayDataRow(i));
-			max = Math.max(max, fm.stringWidth(str));
+			if(geneNames) {
+				str = dataset.getRowName(i);
+			} else {
+				str = (String) getRowDescription(i);	
+			}
+			if(str != null) {
+				max = Math.max(max, fm.stringWidth(str));
+			}
 		}
 		return max;
 	}
