@@ -202,6 +202,7 @@ public class HeatMap extends JPanel {
 		Color gridLinesColor = Color.black;
 		boolean showGridLines = false;
 		boolean showGeneAnnotations = false;
+      boolean showGeneNames = true;
 		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
 			if(args[i].equals("-cw")) {
 				columnWidth = Integer.parseInt(args[++i]);
@@ -219,25 +220,14 @@ public class HeatMap extends JPanel {
 				gridLinesColor = createColor(args[++i]);
 			} else if(args[i].equals("-ra")) {
 				showGeneAnnotations = "yes".equalsIgnoreCase(args[++i]);
-			/*} else if(args[i].equals("-font-family")) {
-				fontFamily = args[++i];
-			} else if(args[i].equals("-font-style")) {
-				String temp = args[++i];
-				if("Plain".equalsIgnoreCase(temp)) {
-					fontStyle = Font.PLAIN;
-				} else if("BOLD".equalsIgnoreCase(temp)) {
-					
-				} else if("BOLDITALIC".equalsIgnoreCase(temp)) {
-					
-				} else {
-					exit("unknown value for -font-style");
-				}
-				*/
+         } else if(args[i].equals("-p")) {
+            showGeneNames = "yes".equalsIgnoreCase(args[++i]);
 			} else {
 				exit("unknown option " + args[i]);
 			}
 		}
 		heatMap.showGeneAnnotations = showGeneAnnotations;
+      heatMap.showGeneNames = showGeneNames;
 		heatMap.setShowGridLines(showGridLines);
 		heatMap.setGridLinesColor(gridLinesColor);
 		
