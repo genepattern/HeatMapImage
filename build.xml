@@ -25,6 +25,7 @@
 			<fileset dir="../../lib">
 				<include name="colt.jar"/>
 				<include name="trove.jar"/>
+				<include name="jaxb-rt-1.0-ea.jar"/>
 			</fileset>
 			<fileset dir="../HierarchicalClusteringViewer">
 				<include name="*.jar"/>
