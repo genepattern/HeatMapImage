@@ -27,12 +27,10 @@
 				<include name="trove.jar"/>
 			</fileset>
 			<fileset dir="../HierarchicalClusteringViewer">
-				<include name="hclviewer.jar"/>
+				<include name="*.jar"/>
 			</fileset>
-			
-			<fileset dir="../HierarchicalClusteringViewer/lib">
-				<include name="ij.jar"/>
-			</fileset>
+			<fileset dir="../HierarchicalClusteringViewer/lib" />
+	
 		</zip>
 		<antcall target="postzip"/>
 	</target>

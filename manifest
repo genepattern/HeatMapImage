@@ -1,12 +1,12 @@
 #HeatMapReporter
-#Mon Jan 12 09:49:43 EST 2004
+#Mon Jan 12 22:31:17 EST 2004
 p2_type=java.lang.String
 p2_default_value=
 p1_MODE=IN
 p3_optional=
 quality=production
 author=Joshua Gould
-p2_description=The output file name -.bmp, .tiff
+p2_description=The output file name -.jpeg, .png
 taskType=Reporter
 name=HeatMapReporter
 description=Creates a heat map from a dataset
@@ -25,7 +25,7 @@ JVMLevel=1.3
 p2_value=
 p1_optional=
 p1_value=
-p3_value=bmp;tiff
+p3_value=jpeg;png
 p3_default_value=
 p1_name=input.filename
 userid=jgould@broad.mit.edu
@@ -36,5 +36,5 @@ p2_optional=
 p3_name=output.file.format
 version=1.0
 p3_description=The output file format
-commandLine=java -Xmx512m -cp <libdir>colt.jar<path.separator><libdir>file_support.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>hclviewer.jar<path.separator><libdir>ij.jar<path.separator><libdir>trove.jar edu.mit.genome.gp.ui.hclviewer.HeatMap <input.filename> <output.file> <output.file.format>
+commandLine=java -Xmx512m -cp <libdir>batik-awt-util.jar<path.separator><libdir>batik-extension.jar<path.separator><libdir>batik-svg-dom.jar<path.separator><libdir>batik-xml.jar<path.separator><libdir>ij.jar<path.separator><libdir>xerces_2_3_0.jar<path.separator><libdir>batik-bridge.jar<path.separator><libdir>batik-gui-util.jar<path.separator><libdir>batik-svggen.jar<path.separator><libdir>colt.jar<path.separator><libdir>jargs.jar<path.separator><libdir>xml-apis.jar<path.separator><libdir>batik-css.jar<path.separator><libdir>batik-gvt.jar<path.separator><libdir>batik-swing.jar<path.separator><libdir>file_support.jar<path.separator><libdir>js.jar<path.separator><libdir>batik-dom.jar<path.separator><libdir>batik-parser.jar<path.separator><libdir>batik-transcoder.jar<path.separator><libdir>gp-common.jar<path.separator><libdir>pdf-transcoder.jar<path.separator><libdir>batik-ext.jar<path.separator><libdir>batik-script.jar<path.separator><libdir>batik-util.jar<path.separator><libdir>hclviewer.jar<path.separator><libdir>trove.jar edu.mit.genome.gp.ui.hclviewer.HeatMap <input.filename> <output.file> <output.file.format>
 privacy=public
