@@ -2,7 +2,7 @@
 <!DOCTYPE project [
         <!ENTITY zip_targets SYSTEM "file:../ziptargets.xml">
 ]>
-<project basedir="." default="create-zip" name="HeatMapReporter">
+<project basedir="." default="create-zip" name="HeatMapImage">
  &zip_targets;
 
 <target name="init">
