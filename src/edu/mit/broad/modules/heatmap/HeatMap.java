@@ -246,14 +246,20 @@ public class HeatMap extends JPanel {
 		if(normalization.equals("none")) { // default is row
 			heatMap.setNormalization(HeatMap.NORMALIZATION_NONE);
 		}
-		BufferedImage bi = new BufferedImage(100, 100, BufferedImage.TYPE_3BYTE_BGR);
-		Graphics2D g2 = bi.createGraphics();
-		heatMap.updateSize(g2);
-		heatMap.header.updateSize(heatMap.contentWidth, heatMap.elementSize.width, g2);
-		g2.dispose();
-
+		Graphics2D epsGraphics = null; 
+		if(outputFileFormat.equals("eps")) {
+		    epsGraphics = new org.jibble.epsgraphics.EpsGraphics2D();
+		    heatMap.updateSize(epsGraphics);
+                    heatMap.header.updateSize(heatMap.contentWidth, heatMap.elementSize.width, epsGraphics);
+		} else {
+		    BufferedImage bi = new BufferedImage(100, 100, BufferedImage.TYPE_3BYTE_BGR);
+		    Graphics2D g2 = bi.createGraphics();
+		    heatMap.updateSize(g2);
+		    heatMap.header.updateSize(heatMap.contentWidth, heatMap.elementSize.width, g2);
+		    g2.dispose();
+		}
 		if(outputFileFormat.equals("jpeg")) {
-			if(!outputFileName.toLowerCase().endsWith(".jpg") && !outputFileName.toLowerCase().endsWith("jpeg")) {
+			if(!outputFileName.toLowerCase().endsWith(".jpg") && !outputFileName.toLowerCase().endsWith(".jpeg")) {
 				outputFileName += ".jpg";
 			}
 		} else if(outputFileFormat.equals("png")) {
@@ -268,8 +274,13 @@ public class HeatMap extends JPanel {
 			if(!outputFileName.toLowerCase().endsWith(".bmp")) {
 				outputFileName += ".bmp";
 			}
+		} else if(outputFileFormat.equals("eps")) {
+		    if(!outputFileName.toLowerCase().endsWith(".eps") && !outputFileName.toLowerCase().endsWith(".ps")) {
+			outputFileName += ".eps";
+		    }
 		}
-		try {
+		if(!outputFileFormat.equals("eps")) {
+		    try {
 			ImageEncodeParam fParam = null;
 			if(outputFileFormat.equals("jpeg")) {
 				JPEGEncodeParam jpegParam = new JPEGEncodeParam();
@@ -285,8 +296,23 @@ public class HeatMap extends JPanel {
 				fParam = new com.sun.media.jai.codec.BMPEncodeParam();
 			}
 			JAI.create("filestore", heatMap.snapshot(), outputFileName, outputFileFormat, fParam);
-		} catch(Exception ioe) {
+		    } catch(Exception ioe) {
 			exit("An error occurred while saving the image.\nCause: " + ioe.getMessage());
+		    }
+		} else {
+		    epsGraphics.setFont(heatMap.header.font);
+		    heatMap.header.draw(epsGraphics);
+		    epsGraphics.translate(0, heatMap.header.height);
+		    epsGraphics.setFont(heatMap.font);
+		    heatMap.draw(epsGraphics);
+		    String output = epsGraphics.toString();
+		    try {
+			java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(outputFileName));
+			pw.print(output);
+			pw.close();
+		    } catch(java.io.IOException ioe) {
+			exit("An error occurred while saving the postscript file.\nCause: " + ioe.getMessage());
+		    }
 		}
 	}
 
