@@ -401,10 +401,9 @@ public class HeatMap extends JPanel {
 						}
 						String annot = (String) getRowDescription(row);
 						if(annot!=null) {
-							g.drawString(annot, geneAnnotationX, annY - descent);
+							g.drawString(annot, geneAnnotationX, annY + fm.getAscent());
 						}
 					}
-					// draw annotations
 				}
 			}
 		}
