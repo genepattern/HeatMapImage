@@ -166,8 +166,6 @@ public class HeatMap extends JPanel {
 		int columnWidth = 10;
 		int rowWidth = 10;
 		String normalization = "row";
-		boolean showGeneNames = true;
-		boolean showSampleNames = true;
 		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
 			if(args[i].equals("-cw")) {
 				columnWidth = Integer.parseInt(args[++i]);
@@ -178,23 +176,13 @@ public class HeatMap extends JPanel {
 				if(!normalization.equals("none") && !normalization.equals("row")) {
 					exit("Invalid normalization");
 				}
-			} else if(args[i].equals("-gn")) {
-				String temp = args[++i];
-				if("false".equalsIgnoreCase(temp) {
-					showGeneNames = false;	
-				}	
-			} else if(args[i].equals("-sn")) {
-				String temp = args[++i];
-				if("false".equalsIgnoreCase(temp) {
-					showSampleNames = false;	
 			} else {
 				exit("unknown option " + args[i]);
 			}
 		}
-		heatMap.showGeneNames = showGeneNames;
-		heatMap.showSampleNames = showSampleNames;
+
 		heatMap.setElementSize(rowWidth, columnWidth);
-		
+
 		if(normalization.equals("none")) { // default is row
 			heatMap.setNormalization(HeatMap.NORMALIZATION_NONE);
 		}
