@@ -1,18 +1,19 @@
 #HeatMapImage
 #Tue Jan 25 11:36:13 EST 2005
-author=Joshua Gould
-className=edu.mit.wi.omnigene.service.analysis.genepattern.GenePatternAnalysisTask
+author=Joshua Gould, Broad Institute
 commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>epsgraphics.jar<path.separator><libdir>HeatMap.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>jai_core.jar<path.separator><libdir>jai_codec.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -cw <column.size> -rw <row.size> -norm <normalization> -grid <grid> -gridcolor <grid.color> -ra <row.annotations> -p <row.names>
 cpuType=any
 description=Creates a heat map graphic from a dataset
+fileFormat=jpeg;png;tiff;bmp;eps
 JVMLevel=1.3
 language=Java
 LSID=urn\:lsid\:8080.jgould.cmec5-ea2.broad.mit.edu\:genepatternmodules\:11\:2
 name=HeatMapImage
-fileFormat=jpeg;png;tiff;bmp;eps
 os=any
+fileFormat=jpeg;png;tiff;bmp;eps
 p1_default_value=
 p1_description=The input file - .res, .gct, .odf
+p1_fileFormat=res;gct;dataset
 p1_MODE=IN
 p1_name=input.filename
 p1_optional=
@@ -20,7 +21,7 @@ p1_prefix_when_specified=
 p1_TYPE=FILE
 p1_type=java.io.File
 p1_value=
-p1_fileFormat=res;gct;dataset
+p1_fileFormat=res;gct;Dataset
 p10_default_value=yes
 p10_description=Whether to draw row names
 p10_name=row.names
@@ -89,5 +90,5 @@ privacy=public
 quality=production
 serializedModel=
 taskType=Image Creators
-userid=dsf
+userid=GenePattern (gp-help@broad.mit.edu)
 version=Added option to show/hide row names
