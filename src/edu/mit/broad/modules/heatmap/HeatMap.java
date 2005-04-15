@@ -51,9 +51,9 @@ public class HeatMap extends JPanel {
 	Dimension elementSize = new Dimension(10, 10);
 
 	/**  max color for absolute color scheme */
-	Color maxColor = Color.red;
+	Color maxColor = new Color(208,12,0);//Color.red;
 	/**  min color for absolute color scheme */
-	Color minColor = Color.green;
+	Color minColor = new Color(69,00,173);//Color.green;
 
 	/**  width of 'cells', gene names, left inset, gene class label area */
 	int contentWidth = 0;
@@ -69,7 +69,7 @@ public class HeatMap extends JPanel {
 	static AlphaComposite SRC_OVER_COMPOSITE = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
 
 	/**  neutral color for absolute color scheme */
-	private Color neutralColor = Color.black;
+	private Color neutralColor = new Color(255,192,229);
 
 	private HeatMapHeader header;
 
@@ -827,9 +827,9 @@ public class HeatMap extends JPanel {
 		}
 		this.normalization = _normalization;
 		if(normalization == NORMALIZATION_NONE) {
-         getMinMax();
-         posColorImage = createGradientImage(neutralColor, maxColor);
-         negColorImage = createGradientImage(minColor, neutralColor);
+         		getMinMax();
+         		posColorImage = createGradientImage(neutralColor, maxColor);
+         		negColorImage = createGradientImage(minColor, neutralColor);
 			this.header.setDrawColorBar(true);
 		} else {
 			this.header.setDrawColorBar(false);
