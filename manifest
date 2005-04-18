@@ -5,7 +5,6 @@ commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>epsgraphic
 cpuType=any
 description=Creates a heat map graphic from a dataset
 fileFormat=jpeg;png;tiff;bmp;eps
-fileFormat=jpeg;png;tiff;bmp;eps
 JVMLevel=1.3
 language=Java
 LSID=urn\:lsid\:8080.jgould.cmec5-ea2.broad.mit.edu\:genepatternmodules\:11\:2
@@ -14,7 +13,6 @@ os=any
 p1_default_value=
 p1_description=The input file - .res, .gct, .odf
 p1_fileFormat=res;gct;Dataset
-p1_fileFormat=res;gct;dataset
 p1_MODE=IN
 p1_name=input.filename
 p1_optional=
