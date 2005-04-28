@@ -40,7 +40,6 @@ public class HeatMap extends JPanel {
 	DoubleMatrix2D dataset;
    String[] rowDescriptions;
 	ExpressionData data;
-	MyClassVector geneClassVector;
 	MyClassVector sampleClassVector;
 	/**  max value in the dataset */
 	double maxValue = -Double.MAX_VALUE;
@@ -100,8 +99,9 @@ public class HeatMap extends JPanel {
 	int maxGeneAnnotationsWidth = 0;
 	/** The number of pixels after the gene name and before the gene annotation */
 	int spaceAfterGeneNames = 0;
-	
-   
+	/** if not null, draw a filled square to the left of the row name */
+	Color[] rowColorAnnotations;
+	 
 	public HeatMap(ExpressionData data) {
 		this(data, null, null);
 	}
@@ -119,9 +119,6 @@ public class HeatMap extends JPanel {
 		this.data = data;
 		this.dataset = (DoubleMatrix2D) data.getExpressionMatrix();
       this.rowDescriptions = data.getRowDescriptions();
-		this.geneClassVector = new MyClassVector(dataset.getRowCount());
-		geneClassVector.addClassVectorListener(new GeneClassVectorListener());
-		geneClassVector.setColor(geneClassVector.getClassName(0), Color.black);
 		this.sampleClassVector = new MyClassVector(dataset.getColumnCount());
 		sampleClassVector.setColor(sampleClassVector.getClassName(0), Color.black);
 		this.genesOrder = genesOrder == null ? createDefaultOrdering(dataset.getRowCount()) : genesOrder;
@@ -208,6 +205,7 @@ public class HeatMap extends JPanel {
 		boolean showGridLines = false;
 		boolean showGeneAnnotations = false;
       boolean showGeneNames = true;
+		java.util.List featureList = null;
 		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
 			if(args[i].equals("-cw")) {
 				columnWidth = Integer.parseInt(args[++i]);
@@ -227,10 +225,31 @@ public class HeatMap extends JPanel {
 				showGeneAnnotations = "yes".equalsIgnoreCase(args[++i]);
          } else if(args[i].equals("-p")) {
             showGeneNames = "yes".equalsIgnoreCase(args[++i]);
+			} else if(args[i].equals("-f")) {
+				featureList = AnalysisUtil.readFeatureList(args[++i]);
 			} else {
 				exit("unknown option " + args[i]);
 			}
 		}
+		if(featureList!=null) {
+			heatMap.rowColorAnnotations = new Color[data.getRowCount()];
+			for(int i = 0; i < featureList.size(); i++) {
+				String feature = (String) featureList.get(i);
+				int index = data.getExpressionMatrix().getRowIndex(feature);
+				if(index < 0) {
+					System.out.println(feature + " not found in feature list.");	
+				} else {
+					heatMap.rowColorAnnotations[index] = Color.red;	
+				}
+			}
+			
+		}
+	//	ColoredClassVector cv = heatMap.geneClassVector.asColoredClassVector();
+	//	ColoredClassVector cv = new ColoredClassVector();
+	//	cv.setColor(1, Color.red);
+	
+		
+		
 		heatMap.showGeneAnnotations = showGeneAnnotations;
       heatMap.showGeneNames = showGeneNames;
 		heatMap.setShowGridLines(showGridLines);
@@ -364,7 +383,7 @@ public class HeatMap extends JPanel {
 
 		int expWidth = samples * this.elementSize.width + 5;
 
-		if(geneClassVector.hasNonDefaultLabels()) { // draw colors beside the gene names
+		if(rowColorAnnotations!=null) { //geneClassVector.hasNonDefaultLabels()) { // draw colors beside the gene names
 			for(int row = top; row < bottom; row++) {
 				drawGeneLabel(g, row, expWidth);
 			}
@@ -374,7 +393,7 @@ public class HeatMap extends JPanel {
 			Composite oldComposite = g2.getComposite();
 			g2.setComposite(HeatMap.SRC_OVER_COMPOSITE);
 			int uniqX = elementSize.width * samples + 10;
-			if(geneClassVector.hasNonDefaultLabels()) {
+			if(rowColorAnnotations!=null) { // geneClassVector.hasNonDefaultLabels()) {
 				uniqX += this.elementSize.width;
 			}
 			int topSel = (geneMouseListener.topSelectedGeneIndex) * elementSize.height;
@@ -395,7 +414,7 @@ public class HeatMap extends JPanel {
 				g.setColor(Color.black);
 				int uniqX = elementSize.width * samples + 10;
 
-				if(geneClassVector.hasNonDefaultLabels()) {
+				if(rowColorAnnotations!=null) { // geneClassVector.hasNonDefaultLabels()) {
 					uniqX += this.elementSize.width;
 				}
 				FontMetrics fm = g.getFontMetrics();
@@ -484,8 +503,8 @@ public class HeatMap extends JPanel {
 
 
 	public void sortGenesByColor() {
-		sortByClass(geneClassVector, genesOrder);
-
+		//sortByClass(geneClassVector, genesOrder);
+// FIXME
 	}
 
 
@@ -673,7 +692,7 @@ public class HeatMap extends JPanel {
 			width += this.maxGeneAnnotationsWidth;
 		}
 
-		if(geneClassVector.hasNonDefaultLabels()) {
+		if(rowColorAnnotations!=null) {
 			width += this.elementSize.width + 10;
 		}
 
@@ -732,7 +751,10 @@ public class HeatMap extends JPanel {
 		    ClassVector cv = (ClassVector) classVectors.get(0);
 		    int[] levels = cv.getLevels();
 		  */
-		Color c = geneClassVector.getColorForIndex(genesOrder[row]);
+		Color c =  rowColorAnnotations[genesOrder[row]];
+		if(c==null) {
+			return;
+		}
 		g.setColor(c);
 		g.fillRect(xLoc + insets.left, row * elementSize.height, elementSize.width - 1, elementSize.height);
 	}
@@ -1196,7 +1218,7 @@ public class HeatMap extends JPanel {
 			lastYIndex = bottomSelectedGeneIndex;
 
 			int uniqX = elementSize.width * dataset.getColumnCount() + 10;
-			if(geneClassVector.hasNonDefaultLabels()) {
+			if(rowColorAnnotations!=null) {
 				uniqX += elementSize.width;
 			}
 			int leftSel = uniqX + insets.left;
