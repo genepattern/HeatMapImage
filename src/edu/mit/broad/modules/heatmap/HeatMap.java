@@ -206,6 +206,7 @@ public class HeatMap extends JPanel {
 		boolean showGeneAnnotations = false;
       boolean showGeneNames = true;
 		java.util.List featureList = null;
+		Color highlightColor = Color.red;
 		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
 			if(args[i].equals("-cw")) {
 				columnWidth = Integer.parseInt(args[++i]);
@@ -227,6 +228,8 @@ public class HeatMap extends JPanel {
             showGeneNames = "yes".equalsIgnoreCase(args[++i]);
 			} else if(args[i].equals("-f")) {
 				featureList = AnalysisUtil.readFeatureList(args[++i]);
+			} else if(args[i].equals("-fc")) {
+				highlightColor = createColor(args[++i]);
 			} else {
 				exit("unknown option " + args[i]);
 			}
@@ -239,17 +242,12 @@ public class HeatMap extends JPanel {
 				if(index < 0) {
 					System.out.println(feature + " not found in feature list.");	
 				} else {
-					heatMap.rowColorAnnotations[index] = Color.red;	
+					heatMap.rowColorAnnotations[index] = highlightColor;	
 				}
 			}
 			
 		}
-	//	ColoredClassVector cv = heatMap.geneClassVector.asColoredClassVector();
-	//	ColoredClassVector cv = new ColoredClassVector();
-	//	cv.setColor(1, Color.red);
-	
-		
-		
+			
 		heatMap.showGeneAnnotations = showGeneAnnotations;
       heatMap.showGeneNames = showGeneNames;
 		heatMap.setShowGridLines(showGridLines);
@@ -308,6 +306,8 @@ public class HeatMap extends JPanel {
 				fParam = param;
 			} else if(outputFileFormat.equals("bmp")) {
 				fParam = new com.sun.media.jai.codec.BMPEncodeParam();
+			} else {
+				exit("Unknown output file format");	
 			}
 			JAI.create("filestore", heatMap.snapshot(), outputFileName, outputFileFormat, fParam);
 		    } catch(Exception ioe) {
