@@ -5,7 +5,7 @@ p8_prefix_when_specified=
 p5_optional=
 p10_value=
 p6_type=java.lang.String
-commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>epsgraphics.jar<path.separator><libdir>HeatMap.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.1.jar<path.separator><libdir>jai_core.jar<path.separator><libdir>jai_codec.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -cw <row.size> -rw <column.size> -norm row -grid <grid> -gridcolor <grid.color> -ra <row.annotations> -p <row.names> -f <feature.list.filename> -fc <highlight.color>
+commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>epsgraphics.jar<path.separator><libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -c<row.size> -r<column.size> -g<grid> -l<grid.color> -a<row.annotations> -s<row.names> -f<feature.list.filename> -h<highlight.color>
 description=Creates a heat map graphic from a dataset
 p8_default_value=no
 p7_optional=on

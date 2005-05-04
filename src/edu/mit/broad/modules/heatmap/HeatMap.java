@@ -208,30 +208,36 @@ public class HeatMap extends JPanel {
 		java.util.List featureList = null;
 		Color highlightColor = Color.red;
 		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
-			if(args[i].equals("-cw")) {
-				columnWidth = Integer.parseInt(args[++i]);
-			} else if(args[i].equals("-rw")) {
-				rowWidth = Integer.parseInt(args[++i]);
-			} else if(args[i].equals("-norm")) {
-				normalization = args[++i];
+         String arg = args[i].substring(0, 2);
+         String value = args[i].substring(2, args[i].length());
+         if(value.equals("")) {
+            continue;
+         }
+         
+			if(arg.equals("-c")) {
+				columnWidth = Integer.parseInt(value);
+			} else if(arg.equals("-r")) {
+				rowWidth = Integer.parseInt(value);
+			} else if(arg.equals("-n")) {
+				normalization = value;
 				if(!normalization.equals("none") && !normalization.equals("row")) {
 					exit("Invalid normalization");
 				}
-			} else if(args[i].equals("-grid")) {
-				showGridLines = "yes".equalsIgnoreCase(args[++i]);
-			} else if(args[i].equals("-gridcolor")) {
+			} else if(arg.equals("-g")) {
+				showGridLines = "yes".equalsIgnoreCase(value);
+			} else if(arg.equals("-l")) {
 				// r:g:b triplet
-				gridLinesColor = createColor(args[++i]);
-			} else if(args[i].equals("-ra")) {
-				showGeneAnnotations = "yes".equalsIgnoreCase(args[++i]);
-         } else if(args[i].equals("-p")) {
-            showGeneNames = "yes".equalsIgnoreCase(args[++i]);
-			} else if(args[i].equals("-f")) {
-				featureList = AnalysisUtil.readFeatureList(args[++i]);
-			} else if(args[i].equals("-fc")) {
-				highlightColor = createColor(args[++i]);
+				gridLinesColor = createColor(value);
+			} else if(arg.equals("-a")) {
+				showGeneAnnotations = "yes".equalsIgnoreCase(value);
+         } else if(arg.equals("-s")) {
+            showGeneNames = "yes".equalsIgnoreCase(value);
+			} else if(arg.equals("-f")) {
+				featureList = AnalysisUtil.readFeatureList(value);
+			} else if(arg.equals("-h")) {
+				highlightColor = createColor(value);
 			} else {
-				exit("unknown option " + args[i]);
+				exit("unknown option " + arg);
 			}
 		}
 		if(featureList!=null) {
