@@ -267,6 +267,8 @@ public class HeatMap extends JPanel {
 		Graphics2D epsGraphics = null; 
 		if(outputFileFormat.equals("eps")) {
 		    epsGraphics = new org.jibble.epsgraphics.EpsGraphics2D();
+		    epsGraphics.scale(0.24, 0.24); // Set resolution to 300 dpi (0.24 = 72/300)
+           
 		    heatMap.updateSize(epsGraphics);
                     heatMap.header.updateSize(heatMap.contentWidth, heatMap.elementSize.width, epsGraphics);
 		} else {
