@@ -164,8 +164,8 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		}
 		int width = samples * heatMap.elementSize.width;
 		if(drawColorBar) {
-			g.drawImage(heatMap.negColorImage, insets.left, 0, (int) (width / 2f), IMAGE_HEIGHT, null);
-			g.drawImage(heatMap.posColorImage, (int) ((width) / 2f + insets.left), 0, (int) (width / 2.0), IMAGE_HEIGHT, null);
+		//	g.drawImage(heatMap.negColorImage, insets.left, 0, (int) (width / 2f), IMAGE_HEIGHT, null);
+		//	g.drawImage(heatMap.posColorImage, (int) ((width) / 2f + insets.left), 0, (int) (width / 2.0), IMAGE_HEIGHT, null);
 		}
 		FontMetrics hfm = g.getFontMetrics();
 		int descent = hfm.getDescent();

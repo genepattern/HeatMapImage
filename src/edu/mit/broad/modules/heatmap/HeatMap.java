@@ -33,7 +33,7 @@ public class HeatMap extends JPanel {
 	public static int COLOR_RESPONSE_LINEAR = 1;
 
 	public static int NORMALIZATION_ROW = 0;
-	public static int NORMALIZATION_NONE = 1;
+	public static int NORMALIZATION_GLOBAL = 1;
 
 	/**  The url to go to when the user double clicks the gene name */
 	public final static String GENE_QUERY = "<query>";
@@ -48,12 +48,6 @@ public class HeatMap extends JPanel {
 
 	/**  width and height of one 'cell' in the heatmap */
 	Dimension elementSize = new Dimension(10, 10);
-
-	/**  max color for absolute color scheme */
-	Color maxColor = new Color(208,12,0);//Color.red;
-	/**  min color for absolute color scheme */
-	Color minColor = new Color(69,00,173);//Color.green;
-
 	/**  width of 'cells', gene names, left inset, gene class label area */
 	int contentWidth = 0;
 	/**  height of this heatmap */
@@ -66,9 +60,6 @@ public class HeatMap extends JPanel {
 	int fontStyle  = Font.PLAIN;
 	
 	static AlphaComposite SRC_OVER_COMPOSITE = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
-
-	/**  neutral color for absolute color scheme */
-	private Color neutralColor = new Color(255,192,229);
 
 	private HeatMapHeader header;
 
@@ -90,9 +81,7 @@ public class HeatMap extends JPanel {
 	private Font font;
 
 	private GeneMouseListener geneMouseListener = new GeneMouseListener();
-	BufferedImage posColorImage;
-	BufferedImage negColorImage;
-
+	
 	/** Whether to show gene annoations */
 	boolean showGeneAnnotations = false;
 	/** The max width of the gene annotations */
@@ -125,12 +114,12 @@ public class HeatMap extends JPanel {
 		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(dataset.getColumnCount()) : samplesOrder;
 		this.header = new HeatMapHeader(this);
 		sampleClassVector.addClassVectorListener(header);
-		setNormalization(NORMALIZATION_ROW);
 		setBackground(Color.white);
 		Listener listener = new Listener();
 		addMouseListener(listener);
 		addMouseMotionListener(listener);
 		rowColorConverter = new RowColorConverter(COLOR_RESPONSE_LINEAR, dataset);
+		setNormalization(NORMALIZATION_ROW);
 	//	ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
 	//	toolTipManager.registerComponent(this);
 	//	addMouseListener(geneMouseListener);
@@ -142,19 +131,7 @@ public class HeatMap extends JPanel {
 		System.err.println(s);
 		System.exit(1);
 	}
-   
-   private void getMinMax() {
-      maxValue = -Double.MAX_VALUE;
-		minValue = Double.MAX_VALUE;
-		for(int i = 0, rows = dataset.getRowCount(); i < rows; i++) {
-			for(int j = 0, columns = dataset.getColumnCount(); j < columns; j++) {
-				double d = dataset.get(i, j);
-				maxValue = d > maxValue ? d : maxValue;
-				minValue = d < minValue ? d : minValue;
-			}
-		}  
-   }
-
+  
 	
 	private static Color createColor(String triplet) {
 		String[] rgb = triplet.split(":");
@@ -200,7 +177,7 @@ public class HeatMap extends JPanel {
 
 		int columnWidth = 10;
 		int rowWidth = 10;
-		String normalization = "row";
+		String normalization = "row normalized";
 		Color gridLinesColor = Color.black;
 		boolean showGridLines = false;
 		boolean showGeneAnnotations = false;
@@ -220,7 +197,7 @@ public class HeatMap extends JPanel {
 				rowWidth = Integer.parseInt(value);
 			} else if(arg.equals("-n")) {
 				normalization = value;
-				if(!normalization.equals("none") && !normalization.equals("row")) {
+				if(!normalization.equals("global") && !normalization.equals("row normalized")) {
 					exit("Invalid normalization");
 				}
 			} else if(arg.equals("-g")) {
@@ -260,9 +237,9 @@ public class HeatMap extends JPanel {
 		heatMap.setGridLinesColor(gridLinesColor);
 		
 		heatMap.setElementSize(rowWidth, columnWidth);
-
-		if(normalization.equals("none")) { // default is row
-			heatMap.setNormalization(HeatMap.NORMALIZATION_NONE);
+		 
+		if(normalization.equals("global")) { // default is row
+			heatMap.setNormalization(HeatMap.NORMALIZATION_GLOBAL);
 		}
 		Graphics2D epsGraphics = null; 
 		if(outputFileFormat.equals("eps")) {
@@ -615,53 +592,6 @@ public class HeatMap extends JPanel {
 	}
 
 
-	/**
-	 *  Selects rows from start to end.
-	 *
-	 *@param  color1  Description of the Parameter
-	 *@param  color2  Description of the Parameter
-	 *@return         Description of the Return Value
-	 */
-	/*
-	    void selectRows(int start, int end) {
-	    firstSelectedRow = start;
-	    lastSelectedRow = end;
-	    repaint();
-	    }
-	  */
-	/**
-	 *  Selects columns from start to end.
-	 *
-	 *@param  color1  Description of the Parameter
-	 *@param  color2  Description of the Parameter
-	 *@return         Description of the Return Value
-	 */
-	/*
-	    void selectColumns(int start, int end) {
-	    firstSelectedColumn = start;
-	    lastSelectedColumn = end;
-	    repaint();
-	    }
-	  */
-	/**
-	 *  Creates a gradient image with specified initial colors.
-	 *
-	 *@param  color1  Description of the Parameter
-	 *@param  color2  Description of the Parameter
-	 *@return         Description of the Return Value
-	 */
-	BufferedImage createGradientImage(Color color1, Color color2) {
-		//BufferedImage image = (BufferedImage)java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(256, 1);
-		BufferedImage image = new BufferedImage(256, 1, BufferedImage.TYPE_INT_RGB);
-
-		Graphics2D graphics = image.createGraphics();
-		GradientPaint gp = new GradientPaint(0, 0, color1, 255, 0, color2);
-		graphics.setPaint(gp);
-		graphics.drawRect(0, 0, 255, 1);
-		return image;
-	}
-
-
 
 	static int[] createDefaultOrdering(int size) {
 		int[] order = new int[size];
@@ -727,12 +657,8 @@ public class HeatMap extends JPanel {
 
 		//	selected = (selected || this.firstSelectedColumn >= 0 && this.lastSelectedColumn >= 0 && (column >= this.firstSelectedColumn && column <= this.lastSelectedColumn));
 
-		if(normalization == NORMALIZATION_ROW) {
-			g.setColor(rowColorConverter.getColor(getRow(row), getColumn(column)));
-		} else { //normalization = ABSOLUTE
-			g.setColor(getColor(this.dataset.get(getRow(row), getColumn(column))));
-		}
-
+		
+		g.setColor(rowColorConverter.getColor(getRow(row), getColumn(column)));
 		g.fillRect(x, y, elementSize.width, elementSize.height);
 		/*
 		    if(selected) {
@@ -852,19 +778,16 @@ public class HeatMap extends JPanel {
 
 
 	public void setNormalization(int _normalization) {
-		if(_normalization != NORMALIZATION_ROW && _normalization != NORMALIZATION_NONE) {
+		if(_normalization != NORMALIZATION_ROW && _normalization != NORMALIZATION_GLOBAL) {
 			throw new IllegalArgumentException("Unknown normalization");
 		}
-		this.normalization = _normalization;
-		if(normalization == NORMALIZATION_NONE) {
-         		getMinMax();
-         		posColorImage = createGradientImage(neutralColor, maxColor);
-         		negColorImage = createGradientImage(minColor, neutralColor);
-			this.header.setDrawColorBar(true);
+		if(_normalization==NORMALIZATION_ROW) {
+			rowColorConverter.setGlobalScale(false);
 		} else {
-			this.header.setDrawColorBar(false);
+			rowColorConverter.setGlobalScale(true);
 		}
-
+		this.normalization = _normalization;
+		this.header.setDrawColorBar(false);
 	}
 
 
@@ -930,15 +853,6 @@ public class HeatMap extends JPanel {
 		}
 		borderColor = c;		
 	}
-
-	public void setAbsoluteColorScheme(Color minColor, Color maxColor, Color neutralColor) {
-		posColorImage = createGradientImage(neutralColor, maxColor);
-		negColorImage = createGradientImage(minColor, neutralColor);
-		this.minColor = minColor;
-		this.maxColor = maxColor;
-		this.neutralColor = neutralColor;
-	}
-
 
 	/**
 	 *  Sets the left margin for the viewer
@@ -1060,21 +974,6 @@ public class HeatMap extends JPanel {
 	}
 
 
-	public Color getMaxColor() {
-		return maxColor;
-	}
-
-
-	public Color getMinColor() {
-		return minColor;
-	}
-
-
-	public Color getNeutralColor() {
-		return neutralColor;
-	}
-
-
 	/**
 	 *  Returns the row index in the dataset corresponding to the passed index to
 	 *  the genesOrder array
@@ -1129,24 +1028,6 @@ public class HeatMap extends JPanel {
 			}
 		}
 		return max;
-	}
-
-
-	/**
-	 *  Calculates color for passed value using an absolute scale.
-	 *
-	 *@param  value  Description of the Parameter
-	 *@return        The color value
-	 */
-	Color getColor(double value) {
-		if(Double.isNaN(value)) {
-			return missingColor;
-		}
-		double maximum = value < 0 ? this.minValue : this.maxValue;
-		int colorIndex = (int) (255 * value / maximum);
-		colorIndex = colorIndex > 255 ? 255 : colorIndex;
-		int rgb = value < 0 ? negColorImage.getRGB(255 - colorIndex, 0) : posColorImage.getRGB(colorIndex, 0);
-		return new Color(rgb);
 	}
 
 

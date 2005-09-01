@@ -6,7 +6,7 @@ import javax.swing.*;
 import org.genepattern.data.matrix.*;
 
 /**
- *  converts float values to a color from a color map. Performs normalization by
+ *  converts double values to a color from a color map. Performs normalization by
  *  row.
  *
  * @author     Keith Ohm
@@ -25,20 +25,22 @@ public final class RowColorConverter {
 	static Color missingColor = new Color(128, 128, 128);
 
 	/**  the minimum value */
-	private float min = 0;
+	private double min = 0;
 	/**  the maximum value */
-	private float max = 8000;
+	private double max = 8000;
 	/**  the mean value */
-	private float mean = Float.NEGATIVE_INFINITY;
+	private double mean = Double.NEGATIVE_INFINITY;
 
 	/**  the color table */
 	private final Color[] colors;
 	/**  the boundry values used to determine which color to associate a value */
-	private final float[] slots;
+	private final double[] slots;
 
 	private static int[] defaultColorMap = {0x4500ad, 0x2700d1, 0x6b58ef, 0x8888ff, 0xc7c1ff,
 			0xd5d5ff, 0xffc0e5, 0xff8989, 0xff7080, 0xff5a5a, 0xef4040, 0xd60c00};
 
+	private boolean globalScale;
+	
 	/**
 	 *  constructs a new ColorConverter
 	 *
@@ -54,7 +56,7 @@ public final class RowColorConverter {
 			colors[i] = new Color(colormap[i]);
 		}
 		this.colors = colors;
-		this.slots = new float[colormap.length];
+		this.slots = new double[colormap.length];
 		
 		if(response != COLOR_RESPONSE_LINEAR && response != COLOR_RESPONSE_LOG) {
 			throw new IllegalArgumentException("Unkown color response");
@@ -62,7 +64,36 @@ public final class RowColorConverter {
 		this.response = response;
 		this.dataset = dataset;
 	}
+	
+	public RowColorConverter(int response, DoubleMatrix2D dataset) {
+		this(defaultColorMap, response, dataset);
+	}
 
+
+
+ /** sets the params for Global (absolute) color scheme */
+	public final void setGlobalScale (boolean b) {
+		if(b) {
+			max = -Double.MAX_VALUE;
+			min = Double.MAX_VALUE;
+			mean = 0;
+			for(int i = 0, rows = dataset.getRowCount(); i < rows; i++) {
+				for(int j = 0, columns = dataset.getColumnCount(); j < columns; j++) {
+					double d = dataset.get(i, j);
+					max = d > max ? d : max;
+					min = d < min ? d : min;
+					mean +=d;
+				}
+			}  
+			int num = dataset.getColumnCount() * dataset.getRowCount();
+			mean /= num;
+			calculateSlots (min, max, mean, slots);
+		} 
+		this.globalScale = b;
+		  
+    }
+  
+    
 	public void setColorResponse(int _response) {
 		if(_response != COLOR_RESPONSE_LINEAR && _response != COLOR_RESPONSE_LOG) {
 			throw new IllegalArgumentException("Unkown color response");
@@ -73,11 +104,7 @@ public final class RowColorConverter {
 		
 		
 	}
-
-	public RowColorConverter(int response, DoubleMatrix2D dataset) {
-		this(defaultColorMap, response, dataset);
-	}
-
+	
 
 	/**
 	 *  gets the color for the specified entry in the dataset. Getting colors in a
@@ -88,12 +115,12 @@ public final class RowColorConverter {
 	 * @return         The color value
 	 */
 	public Color getColor(int row, int column) {
-		if(lastRow != row) {
+		if(!globalScale && lastRow != row) {
 			calculateRowStats(row);
 			lastRow = row;
 		}
-		float val = (float) dataset.get(row, column);
-		if(Float.isNaN(val)) {
+		double val = dataset.get(row, column);
+		if(Double.isNaN(val)) {
 			return missingColor;
 		}
 		final int num = slots.length - 1;
@@ -135,8 +162,8 @@ public final class RowColorConverter {
 	 *
 	 * @return    The slots value
 	 */
-	public float[] getSlots() {
-		float[] new_slots = new float[slots.length + 1];
+	public double[] getSlots() {
+		double[] new_slots = new double[slots.length + 1];
 		new_slots[0] = min;
 		System.arraycopy(slots, 0, new_slots, 1, slots.length);
 		return new_slots;
@@ -151,7 +178,7 @@ public final class RowColorConverter {
 	 * @param  mean    Description of the Parameter
 	 * @param  values  Description of the Parameter
 	 */
-	private void calculateSlots(final float min, final float max, final float mean, final float[] values) {
+	private void calculateSlots(final double min, final double max, final double mean, final double[] values) {
 		if(response == COLOR_RESPONSE_LOG) {
 			computeLogScaleSlots(min, max, mean, values);
 		} else {
@@ -167,17 +194,17 @@ public final class RowColorConverter {
 	 * @param  rowNumber  Description of the Parameter
 	 */
 	private void calculateRowStats(int rowNumber) {
-		float theMin;
-		float theMax;
-		float theMean;
+		double theMin;
+		double theMax;
+		double theMean;
 		int num = dataset.getColumnCount();
-		theMin = Float.POSITIVE_INFINITY;
-		theMax = Float.NEGATIVE_INFINITY;
+		theMin = Double.POSITIVE_INFINITY;
+		theMax = Double.NEGATIVE_INFINITY;
 		theMean = 0;
 		int numDataPoints = 0;// some arrays might not have data for all genes
 		for(int i = 0; i < num; i++) {
-			float tmpVal = (float) dataset.get(rowNumber, i);
-			if(Float.isNaN(tmpVal)) {
+			double tmpVal = (double) dataset.get(rowNumber, i);
+			if(Double.isNaN(tmpVal)) {
 				continue;
 			}
 			if(tmpVal < theMin) {
@@ -206,21 +233,21 @@ public final class RowColorConverter {
 	 * @param  real_mean  Description of the Parameter
 	 * @param  slots      Description of the Parameter
 	 */
-	private void computeLogScaleSlots(final float real_min, final float real_max, final float real_mean, final float[] slots) {
+	private void computeLogScaleSlots(final double real_min, final double real_max, final double real_mean, final double[] slots) {
 		//cannot take log of 0 or negatives
-		final float min = 1f;
+		final double min = 1f;
 		//cannot take log of 0 or negatives
-		final float max = real_max - real_min + min;
+		final double max = real_max - real_min + min;
 		//cannot take log of 0 or negatives
-		final float mean = real_mean - real_min + min;
-		final float range = (float) (Math.log(max) - Math.log(min));
+		final double mean = real_mean - real_min + min;
+		final double range = (double) (Math.log(max) - Math.log(min));
 		final int num = slots.length;
-		final float inc = range / (float) num;
-		float log_val = inc;
+		final double inc = range / (double) num;
+		double log_val = inc;
 
-		final float adjustment = real_min - min;
+		final double adjustment = real_min - min;
 		for(int i = 0; i < num; i++) {
-			slots[i] = (float) Math.exp(log_val) + adjustment;
+			slots[i] = (double) Math.exp(log_val) + adjustment;
 			log_val += inc;
 		}
 		//System.out.println("final log_val="+(log_val - inc));
@@ -235,23 +262,23 @@ public final class RowColorConverter {
 	 * @param  mean   Description of the Parameter
 	 * @param  slots  Description of the Parameter
 	 */
-	private void computeLinearSlots(final float min, final float max, final float mean, final float[] slots) {
+	private void computeLinearSlots(final double min, final double max, final double mean, final double[] slots) {
 		//	final boolean min_to_max = true;
-		final float ave = (mean == Float.NEGATIVE_INFINITY ? (max - min) / 2 : mean);
+		final double ave = (mean == Double.NEGATIVE_INFINITY ? (max - min) / 2 : mean);
 		final int num = slots.length;
 		final int halfway = slots.length / 2;
 
 		//	if(min_to_max) {
 		// calc the range min -> ave
-		final float inc2 = (ave - min) / halfway;
-		float lin_val = min;
+		final double inc2 = (ave - min) / halfway;
+		double lin_val = min;
 		for(int i = 0; i < halfway; i++) {
 			lin_val += inc2;
 			slots[i] = lin_val;
 		}
 
 		// ave -> max
-		final float inc = (max - ave) / (num - halfway);
+		final double inc = (max - ave) / (num - halfway);
 		lin_val = ave;
 		for(int i = halfway; i < num; i++) {
 			lin_val += inc;
@@ -261,14 +288,14 @@ public final class RowColorConverter {
 		/*
 		    } else {// max -> min
 		    / max -> ave
-		    final float inc = (ave - max) / (num - halfway);
+		    final double inc = (ave - max) / (num - halfway);
 		    lin_val = max;
 		    for(int i = 0; i < halfway; i++) {
 		    slots[i] = lin_val;
 		    lin_val += inc;// actually is adding a negative
 		    }
 		    / calc the range ave -> min
-		    final float inc2 = (min - ave) / halfway;
+		    final double inc2 = (min - ave) / halfway;
 		    lin_val = ave;
 		    for(int i = halfway; i < num; i++) {
 		    slots[i] = lin_val;
