@@ -51,13 +51,24 @@ public final class RowColorConverter {
 	 * @param  response  Description of the Parameter
 	 */
 	public RowColorConverter(int[] colormap, int response, DoubleMatrix2D dataset) {
+		this(getColorMap(colormap), response, dataset);
+	}
+	
+	public static Color[] getDefaultColorMap() {
+		return getColorMap(defaultColorMap);
+	}
+	
+	private static Color[] getColorMap(int[] colormap) {
 		Color[] colors = new Color[colormap.length];
 		for(int i = 0; i < colormap.length; ++i) {
 			colors[i] = new Color(colormap[i]);
 		}
+		return colors;
+	}
+	
+	public RowColorConverter(Color[] colors, int response, DoubleMatrix2D dataset) {
 		this.colors = colors;
-		this.slots = new double[colormap.length];
-		
+		this.slots = new double[colors.length];
 		if(response != COLOR_RESPONSE_LINEAR && response != COLOR_RESPONSE_LOG) {
 			throw new IllegalArgumentException("Unkown color response");
 		}
@@ -68,8 +79,6 @@ public final class RowColorConverter {
 	public RowColorConverter(int response, DoubleMatrix2D dataset) {
 		this(defaultColorMap, response, dataset);
 	}
-
-
 
  /** sets the params for Global (absolute) color scheme */
 	public final void setGlobalScale (boolean b) {

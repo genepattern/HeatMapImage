@@ -1,179 +1,266 @@
 package edu.mit.broad.modules.heatmap;
-import java.awt.*;
 
-import java.awt.event.*;
-import java.awt.image.*;
-import java.util.*;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Composite;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.EventObject;
+import java.util.List;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import org.genepattern.data.matrix.*;
-import org.genepattern.data.expr.*;
-import org.genepattern.module.*;
-import org.genepattern.io.*;
-import org.genepattern.io.expr.*;
-
-import com.sun.media.jai.codec.JPEGEncodeParam;
-import com.sun.media.jai.codec.ImageEncodeParam;
 import javax.media.jai.JAI;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.Border;
+import javax.swing.event.EventListenerList;
+import javax.swing.plaf.UIResource;
+
+import org.genepattern.data.expr.ExpressionData;
+import org.genepattern.data.matrix.DoubleMatrix2D;
+import org.genepattern.io.expr.ExpressionDataCreator;
+import org.genepattern.io.expr.IExpressionDataReader;
+import org.genepattern.module.AnalysisUtil;
+
+import com.sun.media.jai.codec.ImageEncodeParam;
+import com.sun.media.jai.codec.JPEGEncodeParam;
 
 /**
- *  This class is used to draw a heat map.
- *
- *@author     Aleksey D.Rezantsev
- *@author     Joshua Gould
- *@created    March 10, 2004
- *@version    1.0
+ * This class is used to draw a heat map.
+ * 
+ * @author Aleksey D.Rezantsev
+ * @author Joshua Gould
+ * @created March 10, 2004
+ * @version 1.0
  */
 public class HeatMap extends JPanel {
 
 	public static int COLOR_RESPONSE_LOG = 0;
+
 	public static int COLOR_RESPONSE_LINEAR = 1;
 
 	public static int NORMALIZATION_ROW = 0;
+
 	public static int NORMALIZATION_GLOBAL = 1;
 
-	/**  The url to go to when the user double clicks the gene name */
+	/** The url to go to when the user double clicks the gene name */
 	public final static String GENE_QUERY = "<query>";
+
 	DoubleMatrix2D dataset;
-   String[] rowDescriptions;
+
+	String[] rowDescriptions;
+
 	ExpressionData data;
+
 	MyClassVector sampleClassVector;
-	/**  max value in the dataset */
+
+	/** max value in the dataset */
 	double maxValue = -Double.MAX_VALUE;
-	/**  min value in the dataset */
+
+	/** min value in the dataset */
 	double minValue = Double.MAX_VALUE;
 
-	/**  width and height of one 'cell' in the heatmap */
+	/** width and height of one 'cell' in the heatmap */
 	Dimension elementSize = new Dimension(10, 10);
-	/**  width of 'cells', gene names, left inset, gene class label area */
+
+	/** width of 'cells', gene names, left inset, gene class label area */
 	int contentWidth = 0;
-	/**  height of this heatmap */
+
+	/** height of this heatmap */
 	int height = 0;
+
 	int[] genesOrder;
+
 	int[] samplesOrder;
+
 	boolean showToolTipText = true;
+
 	boolean antiAliasing = true;
+
 	String fontFamilyName = "monospaced";
-	int fontStyle  = Font.PLAIN;
-	
-	static AlphaComposite SRC_OVER_COMPOSITE = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
+
+	int fontStyle = Font.PLAIN;
+
+	static AlphaComposite SRC_OVER_COMPOSITE = AlphaComposite.getInstance(
+			AlphaComposite.SRC_OVER, 0.5f);
 
 	private HeatMapHeader header;
 
 	private boolean drawBorders = true;
+
 	private Color borderColor = Color.black;
-	
+
 	private static Color missingColor = new Color(128, 128, 128);
+
 	private int geneNameWidth;
+
 	private Insets insets = new Insets(0, 10, 0, 0);
 
 	private boolean showGeneNames = true;
+
 	private RowColorConverter rowColorConverter;
+
 	private int normalization = NORMALIZATION_ROW;
+
 	private static Color maskColor = Color.yellow;
+
 	private String geneURL = "http://www.google.com/search?q=" + GENE_QUERY;
 
 	private EventListenerList eventListeners = new EventListenerList();
-	private java.text.NumberFormat numberFormat = java.text.NumberFormat.getInstance();
+
+	private java.text.NumberFormat numberFormat = java.text.NumberFormat
+			.getInstance();
+
 	private Font font;
 
 	private GeneMouseListener geneMouseListener = new GeneMouseListener();
-	
+
 	/** Whether to show gene annoations */
 	boolean showGeneAnnotations = false;
+
 	/** The max width of the gene annotations */
 	int maxGeneAnnotationsWidth = 0;
+
 	/** The number of pixels after the gene name and before the gene annotation */
 	int spaceAfterGeneNames = 0;
+
 	/** if not null, draw a filled square to the left of the row name */
 	Color[] rowColorAnnotations;
-	 
-	public HeatMap(ExpressionData data) {
-		this(data, null, null);
+
+	public HeatMap(ExpressionData data, Color[] colorMap) {
+		this(data, null, null, colorMap);
 	}
 
-
 	/**
-	 *  Constructs an <code>HeatMap</code> with specified dataset, genesOrder,
-	 *  samples order and draw annotations attribute.
-	 *
-	 *@param  genesOrder    the two dimensional array with spots indices.
-	 *@param  samplesOrder  the one dimensional array with samples indices.
-	 *@param  data          Description of the Parameter
+	 * Constructs an <code>HeatMap</code> with specified dataset, genesOrder,
+	 * samples order and draw annotations attribute.
+	 * 
+	 * @param genesOrder
+	 *            the two dimensional array with spots indices.
+	 * @param samplesOrder
+	 *            the one dimensional array with samples indices.
+	 * @param data
+	 *            Description of the Parameter
 	 */
-	public HeatMap(ExpressionData data, int[] genesOrder, int[] samplesOrder) {
+	public HeatMap(ExpressionData data, int[] genesOrder, int[] samplesOrder,
+			Color[] colorMap) {
 		this.data = data;
 		this.dataset = (DoubleMatrix2D) data.getExpressionMatrix();
-      this.rowDescriptions = data.getRowDescriptions();
+		this.rowDescriptions = data.getRowDescriptions();
 		this.sampleClassVector = new MyClassVector(dataset.getColumnCount());
-		sampleClassVector.setColor(sampleClassVector.getClassName(0), Color.black);
-		this.genesOrder = genesOrder == null ? createDefaultOrdering(dataset.getRowCount()) : genesOrder;
-		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(dataset.getColumnCount()) : samplesOrder;
+		sampleClassVector.setColor(sampleClassVector.getClassName(0),
+				Color.black);
+		this.genesOrder = genesOrder == null ? createDefaultOrdering(dataset
+				.getRowCount()) : genesOrder;
+		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(dataset
+				.getColumnCount())
+				: samplesOrder;
 		this.header = new HeatMapHeader(this);
 		sampleClassVector.addClassVectorListener(header);
 		setBackground(Color.white);
 		Listener listener = new Listener();
 		addMouseListener(listener);
 		addMouseMotionListener(listener);
-		rowColorConverter = new RowColorConverter(COLOR_RESPONSE_LINEAR, dataset);
+		rowColorConverter = new RowColorConverter(colorMap,
+				COLOR_RESPONSE_LINEAR, dataset);
 		setNormalization(NORMALIZATION_ROW);
-	//	ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
-	//	toolTipManager.registerComponent(this);
-	//	addMouseListener(geneMouseListener);
-	//	addMouseMotionListener(geneMouseListener);
+		// ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
+		// toolTipManager.registerComponent(this);
+		// addMouseListener(geneMouseListener);
+		// addMouseMotionListener(geneMouseListener);
 	}
-
 
 	static void exit(String s) {
 		System.err.println(s);
 		System.exit(1);
 	}
-  
-	
+
 	private static Color createColor(String triplet) {
 		String[] rgb = triplet.split(":");
-		if(rgb.length!=3) {
+		if (rgb.length != 3) {
 			exit("Invalid rgb triplet " + triplet);
 		}
 		int r = 0, g = 0, b = 0;
 		try {
 			r = Integer.parseInt(rgb[0]);
-		} catch(NumberFormatException nfe) {
-			exit("Red component is not an integer " + triplet);	
+		} catch (NumberFormatException nfe) {
+			exit("Red component is not an integer " + triplet);
 		}
 		try {
 			g = Integer.parseInt(rgb[1]);
-		} catch(NumberFormatException nfe) {
-			exit("Green component is not an integer " + triplet);	
+		} catch (NumberFormatException nfe) {
+			exit("Green component is not an integer " + triplet);
 		}
 		try {
 			b = Integer.parseInt(rgb[2]);
-		} catch(NumberFormatException nfe) {
-			exit("Blue component is not an integer " + triplet);	
+		} catch (NumberFormatException nfe) {
+			exit("Blue component is not an integer " + triplet);
 		}
 		return new Color(r, g, b);
 	}
 
+	private static Color[] parseColorMap(String fileName) {
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(fileName));
+			String s = null;
+			List colors = new ArrayList();
+			while ((s = br.readLine()) != null) {
+				if (s.trim().equals("")) {
+					continue;
+				}
+				Color c = createColor(s);
+				colors.add(c);
+			}
+			return (Color[]) colors.toArray(new Color[0]);
+		} catch (IOException ioe) {
+			return null;
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+				}
+			}
+		}
+	}
+
 	/**
-	 *  Create a heatmap image from the command line <input.filename>
-	 *  <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
-	 *  <normalization> -grid <grid> -ra <show.row.descriptions> -p <show.row.ids>
-	 *
-	 *@param  args  The command line arguments
+	 * Create a heatmap image from the command line <input.filename>
+	 * <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
+	 * <normalization> -grid <grid> -ra <show.row.descriptions> -p
+	 * <show.row.ids>
+	 * 
+	 * @param args
+	 *            The command line arguments
 	 */
 	public static void main(String[] args) {
 		String inputFileName = args[0];
 		String outputFileName = args[1];
 		String outputFileFormat = args[2];
 
-		IExpressionDataReader reader = AnalysisUtil.getExpressionReader(inputFileName);
-		
-		ExpressionData data = (ExpressionData) AnalysisUtil.readExpressionData(reader, inputFileName, new ExpressionDataCreator());
-		
-		HeatMap heatMap = new HeatMap(data);
+		IExpressionDataReader reader = AnalysisUtil
+				.getExpressionReader(inputFileName);
+
+		ExpressionData data = (ExpressionData) AnalysisUtil.readExpressionData(
+				reader, inputFileName, new ExpressionDataCreator());
 
 		int columnWidth = 10;
 		int rowWidth = 10;
@@ -181,156 +268,176 @@ public class HeatMap extends JPanel {
 		Color gridLinesColor = Color.black;
 		boolean showGridLines = false;
 		boolean showGeneAnnotations = false;
-      boolean showGeneNames = true;
+		boolean showGeneNames = true;
 		java.util.List featureList = null;
 		Color highlightColor = Color.red;
-		for(int i = 3; i < args.length; i++) { // 0th arg is input file name, 1st arg is output file name, 2nd arg is format
-         String arg = args[i].substring(0, 2);
-         String value = args[i].substring(2, args[i].length());
-         if(value.equals("")) {
-            continue;
-         }
-         
-			if(arg.equals("-c")) {
+		Color[] colorMap = null;
+		for (int i = 3; i < args.length; i++) { // 0th arg is input file name,
+			// 1st arg is output file name,
+			// 2nd arg is format
+			String arg = args[i].substring(0, 2);
+			String value = args[i].substring(2, args[i].length());
+			if (value.equals("")) {
+				continue;
+			}
+
+			if (arg.equals("-c")) {
 				columnWidth = Integer.parseInt(value);
-			} else if(arg.equals("-r")) {
+			} else if (arg.equals("-r")) {
 				rowWidth = Integer.parseInt(value);
-			} else if(arg.equals("-n")) {
+			} else if (arg.equals("-n")) {
 				normalization = value;
-				if(!normalization.equals("global") && !normalization.equals("row normalized")) {
+				if (!normalization.equals("global")
+						&& !normalization.equals("row normalized")) {
 					exit("Invalid normalization");
 				}
-			} else if(arg.equals("-g")) {
+			} else if (arg.equals("-g")) {
 				showGridLines = "yes".equalsIgnoreCase(value);
-			} else if(arg.equals("-l")) {
+			} else if (arg.equals("-l")) {
 				// r:g:b triplet
 				gridLinesColor = createColor(value);
-			} else if(arg.equals("-a")) {
+			} else if (arg.equals("-a")) {
 				showGeneAnnotations = "yes".equalsIgnoreCase(value);
-         } else if(arg.equals("-s")) {
-            showGeneNames = "yes".equalsIgnoreCase(value);
-			} else if(arg.equals("-f")) {
+			} else if (arg.equals("-s")) {
+				showGeneNames = "yes".equalsIgnoreCase(value);
+			} else if (arg.equals("-f")) {
 				featureList = AnalysisUtil.readFeatureList(value);
-			} else if(arg.equals("-h")) {
+			} else if (arg.equals("-h")) {
 				highlightColor = createColor(value);
+			} else if (arg.equals("-m")) {
+				colorMap = parseColorMap(value);
 			} else {
 				exit("unknown option " + arg);
 			}
 		}
-		if(featureList!=null) {
+		Color[] _colorMap = colorMap != null ? colorMap : RowColorConverter
+				.getDefaultColorMap();
+		HeatMap heatMap = new HeatMap(data, _colorMap);
+
+		if (featureList != null) {
 			heatMap.rowColorAnnotations = new Color[data.getRowCount()];
-			for(int i = 0; i < featureList.size(); i++) {
+			for (int i = 0; i < featureList.size(); i++) {
 				String feature = (String) featureList.get(i);
 				int index = data.getExpressionMatrix().getRowIndex(feature);
-				if(index < 0) {
-					System.out.println(feature + " not found in feature list.");	
+				if (index < 0) {
+					System.out.println(feature + " not found in feature list.");
 				} else {
-					heatMap.rowColorAnnotations[index] = highlightColor;	
+					heatMap.rowColorAnnotations[index] = highlightColor;
 				}
 			}
-			
 		}
-			
+
 		heatMap.showGeneAnnotations = showGeneAnnotations;
-      heatMap.showGeneNames = showGeneNames;
+		heatMap.showGeneNames = showGeneNames;
 		heatMap.setShowGridLines(showGridLines);
 		heatMap.setGridLinesColor(gridLinesColor);
-		
+
 		heatMap.setElementSize(rowWidth, columnWidth);
-		 
-		if(normalization.equals("global")) { // default is row
+
+		if (normalization.equals("global")) { // default is row
 			heatMap.setNormalization(HeatMap.NORMALIZATION_GLOBAL);
 		}
-		Graphics2D epsGraphics = null; 
-		if(outputFileFormat.equals("eps")) {
-		    epsGraphics = new org.jibble.epsgraphics.EpsGraphics2D();
-		    //epsGraphics.scale(0.24, 0.24); // Set resolution to 300 dpi (0.24 = 72/300)
-           
-		    heatMap.updateSize(epsGraphics);
-                    heatMap.header.updateSize(heatMap.contentWidth, heatMap.elementSize.width, epsGraphics);
+		Graphics2D epsGraphics = null;
+		if (outputFileFormat.equals("eps")) {
+			epsGraphics = new org.jibble.epsgraphics.EpsGraphics2D();
+			// epsGraphics.scale(0.24, 0.24); // Set resolution to 300 dpi (0.24
+			// = 72/300)
+
+			heatMap.updateSize(epsGraphics);
+			heatMap.header.updateSize(heatMap.contentWidth,
+					heatMap.elementSize.width, epsGraphics);
 		} else {
-		    BufferedImage bi = new BufferedImage(100, 100, BufferedImage.TYPE_3BYTE_BGR);
-		    Graphics2D g2 = bi.createGraphics();
-		    heatMap.updateSize(g2);
-		    heatMap.header.updateSize(heatMap.contentWidth, heatMap.elementSize.width, g2);
-		    g2.dispose();
+			BufferedImage bi = new BufferedImage(100, 100,
+					BufferedImage.TYPE_3BYTE_BGR);
+			Graphics2D g2 = bi.createGraphics();
+			heatMap.updateSize(g2);
+			heatMap.header.updateSize(heatMap.contentWidth,
+					heatMap.elementSize.width, g2);
+			g2.dispose();
 		}
-		if(outputFileFormat.equals("jpeg")) {
-			if(!outputFileName.toLowerCase().endsWith(".jpg") && !outputFileName.toLowerCase().endsWith(".jpeg")) {
+		if (outputFileFormat.equals("jpeg")) {
+			if (!outputFileName.toLowerCase().endsWith(".jpg")
+					&& !outputFileName.toLowerCase().endsWith(".jpeg")) {
 				outputFileName += ".jpg";
 			}
-		} else if(outputFileFormat.equals("png")) {
-			if(!outputFileName.toLowerCase().endsWith(".png")) {
+		} else if (outputFileFormat.equals("png")) {
+			if (!outputFileName.toLowerCase().endsWith(".png")) {
 				outputFileName += ".png";
 			}
-		} else if(outputFileFormat.equals("tiff")) {
-			if(!outputFileName.toLowerCase().endsWith(".tiff")) {
+		} else if (outputFileFormat.equals("tiff")) {
+			if (!outputFileName.toLowerCase().endsWith(".tiff")) {
 				outputFileName += ".tiff";
 			}
-		} else if(outputFileFormat.equals("bmp")) {
-			if(!outputFileName.toLowerCase().endsWith(".bmp")) {
+		} else if (outputFileFormat.equals("bmp")) {
+			if (!outputFileName.toLowerCase().endsWith(".bmp")) {
 				outputFileName += ".bmp";
 			}
-		} else if(outputFileFormat.equals("eps")) {
-		    if(!outputFileName.toLowerCase().endsWith(".eps") && !outputFileName.toLowerCase().endsWith(".ps")) {
-			outputFileName += ".eps";
-		    }
-		}
-		if(!outputFileFormat.equals("eps")) {
-		    try {
-			ImageEncodeParam fParam = null;
-			if(outputFileFormat.equals("jpeg")) {
-				JPEGEncodeParam jpegParam = new JPEGEncodeParam();
-				jpegParam.setQuality(1.0f);
-				fParam = jpegParam;
-			} else if(outputFileFormat.equals("png")) {
-				fParam = new com.sun.media.jai.codec.PNGEncodeParam.RGB();
-			} else if(outputFileFormat.equals("tiff")) {
-				com.sun.media.jai.codec.TIFFEncodeParam param = new com.sun.media.jai.codec.TIFFEncodeParam();
-				param.setCompression(com.sun.media.jai.codec.TIFFEncodeParam.COMPRESSION_NONE);
-				fParam = param;
-			} else if(outputFileFormat.equals("bmp")) {
-				fParam = new com.sun.media.jai.codec.BMPEncodeParam();
-			} else {
-				exit("Unknown output file format");	
+		} else if (outputFileFormat.equals("eps")) {
+			if (!outputFileName.toLowerCase().endsWith(".eps")
+					&& !outputFileName.toLowerCase().endsWith(".ps")) {
+				outputFileName += ".eps";
 			}
-			JAI.create("filestore", heatMap.snapshot(), outputFileName, outputFileFormat, fParam);
-		    } catch(Exception ioe) {
-			exit("An error occurred while saving the image.\nCause: " + ioe.getMessage());
-		    }
+		}
+		if (!outputFileFormat.equals("eps")) {
+			try {
+				ImageEncodeParam fParam = null;
+				if (outputFileFormat.equals("jpeg")) {
+					JPEGEncodeParam jpegParam = new JPEGEncodeParam();
+					jpegParam.setQuality(1.0f);
+					fParam = jpegParam;
+				} else if (outputFileFormat.equals("png")) {
+					fParam = new com.sun.media.jai.codec.PNGEncodeParam.RGB();
+				} else if (outputFileFormat.equals("tiff")) {
+					com.sun.media.jai.codec.TIFFEncodeParam param = new com.sun.media.jai.codec.TIFFEncodeParam();
+					param
+							.setCompression(com.sun.media.jai.codec.TIFFEncodeParam.COMPRESSION_NONE);
+					fParam = param;
+				} else if (outputFileFormat.equals("bmp")) {
+					fParam = new com.sun.media.jai.codec.BMPEncodeParam();
+				} else {
+					exit("Unknown output file format");
+				}
+				JAI.create("filestore", heatMap.snapshot(), outputFileName,
+						outputFileFormat, fParam);
+			} catch (Exception ioe) {
+				exit("An error occurred while saving the image.\nCause: "
+						+ ioe.getMessage());
+			}
 		} else {
-		    epsGraphics.setFont(heatMap.header.font);
-		    heatMap.header.draw(epsGraphics);
-		    epsGraphics.translate(0, heatMap.header.height);
-		    epsGraphics.setFont(heatMap.font);
-		    heatMap.draw(epsGraphics);
-		    String output = epsGraphics.toString();
-		    try {
-			java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(outputFileName));
-			pw.print(output);
-			pw.close();
-		    } catch(java.io.IOException ioe) {
-			exit("An error occurred while saving the postscript file.\nCause: " + ioe.getMessage());
-		    }
+			epsGraphics.setFont(heatMap.header.font);
+			heatMap.header.draw(epsGraphics);
+			epsGraphics.translate(0, heatMap.header.height);
+			epsGraphics.setFont(heatMap.font);
+			heatMap.draw(epsGraphics);
+			String output = epsGraphics.toString();
+			try {
+				java.io.PrintWriter pw = new java.io.PrintWriter(
+						new java.io.FileWriter(outputFileName));
+				pw.print(output);
+				pw.close();
+			} catch (java.io.IOException ioe) {
+				exit("An error occurred while saving the postscript file.\nCause: "
+						+ ioe.getMessage());
+			}
 		}
 	}
 
-
 	/**
-	 *  Adds a listener to be notified when the element size is changed.
-	 *
-	 *@param  l  The feature to be added to the ElementSizeChangedListener
-	 *      attribute
+	 * Adds a listener to be notified when the element size is changed.
+	 * 
+	 * @param l
+	 *            The feature to be added to the ElementSizeChangedListener
+	 *            attribute
 	 */
 	public void addElementSizeChangedListener(ElementSizeChangedListener l) {
 		eventListeners.add(ElementSizeChangedListener.class, l);
 	}
 
-
 	/**
-	 *  Paint component into specified graphics.
-	 *
-	 *@param  g  Description of the Parameter
+	 * Paint component into specified graphics.
+	 * 
+	 * @param g
+	 *            Description of the Parameter
 	 */
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -338,7 +445,7 @@ public class HeatMap extends JPanel {
 	}
 
 	private String getRowDescription(int row) {
-      return rowDescriptions[row];
+		return rowDescriptions[row];
 	}
 
 	void draw(Graphics2D g) {
@@ -349,18 +456,18 @@ public class HeatMap extends JPanel {
 		int top = 0;
 		int bottom = dataset.getRowCount();
 
-		if(bounds != null) {
+		if (bounds != null) {
 			top = getTopIndex(bounds.y);
-			bottom = getBottomIndex(bounds.y + bounds.height, dataset.getRowCount());
+			bottom = getBottomIndex(bounds.y + bounds.height, dataset
+					.getRowCount());
 			left = getLeftIndex(bounds.x);
 			right = getRightIndex(bounds.x + bounds.width, samples);
 		}
 		Graphics2D g2 = (Graphics2D) g;
-		
-		
+
 		// draw rectangles
-		for(int row = top; row < bottom; row++) {
-			for(int column = left; column < right; column++) {
+		for (int row = top; row < bottom; row++) {
+			for (int column = left; column < right; column++) {
 				fillRectAt(g2, row, column);
 			}
 		}
@@ -368,78 +475,100 @@ public class HeatMap extends JPanel {
 
 		int expWidth = samples * this.elementSize.width + 5;
 
-		if(rowColorAnnotations!=null) { //geneClassVector.hasNonDefaultLabels()) { // draw colors beside the gene names
-			for(int row = top; row < bottom; row++) {
+		if (rowColorAnnotations != null) { // geneClassVector.hasNonDefaultLabels())
+			// { // draw colors beside the gene
+			// names
+			for (int row = top; row < bottom; row++) {
 				drawGeneLabel(g, row, expWidth);
 			}
 		}
-		if(showGeneNames && geneMouseListener.topSelectedGeneIndex >= 0 && geneMouseListener.bottomSelectedGeneIndex <= dataset.getRowCount()) {
+		if (showGeneNames
+				&& geneMouseListener.topSelectedGeneIndex >= 0
+				&& geneMouseListener.bottomSelectedGeneIndex <= dataset
+						.getRowCount()) {
 			g2.setColor(Color.yellow);
 			Composite oldComposite = g2.getComposite();
 			g2.setComposite(HeatMap.SRC_OVER_COMPOSITE);
 			int uniqX = elementSize.width * samples + 10;
-			if(rowColorAnnotations!=null) { // geneClassVector.hasNonDefaultLabels()) {
+			if (rowColorAnnotations != null) { // geneClassVector.hasNonDefaultLabels())
+				// {
 				uniqX += this.elementSize.width;
 			}
-			int topSel = (geneMouseListener.topSelectedGeneIndex) * elementSize.height;
-			int bottomSel = (geneMouseListener.bottomSelectedGeneIndex) * elementSize.height;
+			int topSel = (geneMouseListener.topSelectedGeneIndex)
+					* elementSize.height;
+			int bottomSel = (geneMouseListener.bottomSelectedGeneIndex)
+					* elementSize.height;
 			int leftSel = uniqX + insets.left;
 			g2.fillRect(leftSel, topSel, geneNameWidth, bottomSel - topSel);
 			g2.setColor(Color.black);
 			g2.setComposite(oldComposite);
 		}
 		// draw gene ids
-		if(this.showGeneNames || this.showGeneAnnotations) {
-			if(this.antiAliasing) {
-				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-				((Graphics2D) g).setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		if (this.showGeneNames || this.showGeneAnnotations) {
+			if (this.antiAliasing) {
+				((Graphics2D) g).setRenderingHint(
+						RenderingHints.KEY_ANTIALIASING,
+						RenderingHints.VALUE_ANTIALIAS_OFF);
+				((Graphics2D) g).setRenderingHint(
+						RenderingHints.KEY_TEXT_ANTIALIASING,
+						RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			}
-			if(right >= samples) {
-				
+			if (right >= samples) {
+
 				g.setColor(Color.black);
 				int uniqX = elementSize.width * samples + 10;
 
-				if(rowColorAnnotations!=null) { // geneClassVector.hasNonDefaultLabels()) {
+				if (rowColorAnnotations != null) { // geneClassVector.hasNonDefaultLabels())
+					// {
 					uniqX += this.elementSize.width;
 				}
 				FontMetrics fm = g.getFontMetrics();
 				int descent = fm.getDescent();
-				
-				
-				for(int row = top; row < bottom; row++) {
-					int annY = (row + 1) * elementSize.height;
-					//int annY = (row ) * elementSize.height;
 
-					if(this.showGeneNames) {
+				for (int row = top; row < bottom; row++) {
+					int annY = (row + 1) * elementSize.height;
+					// int annY = (row ) * elementSize.height;
+
+					if (this.showGeneNames) {
 						String label = dataset.getRowName(row);
-						g.drawString(label, uniqX + insets.left, annY - descent);
-						//g.drawString(label, uniqX + insets.left, annY + fm.getAscent());
+						g
+								.drawString(label, uniqX + insets.left, annY
+										- descent);
+						// g.drawString(label, uniqX + insets.left, annY +
+						// fm.getAscent());
 					}
-					if(showGeneAnnotations) {
-						int geneAnnotationX = uniqX + insets.left + geneNameWidth;
-						if(showGeneNames) {
+					if (showGeneAnnotations) {
+						int geneAnnotationX = uniqX + insets.left
+								+ geneNameWidth;
+						if (showGeneNames) {
 							geneAnnotationX += spaceAfterGeneNames;
 						}
 						String annot = (String) getRowDescription(row);
-						if(annot!=null) {
-							g.drawString(annot, geneAnnotationX, annY - descent);
+						if (annot != null) {
+							g
+									.drawString(annot, geneAnnotationX, annY
+											- descent);
 						}
 					}
 				}
 			}
 		}
-		
-		if(drawBorders) {
+
+		if (drawBorders) {
 			g.setColor(borderColor);
 			int leftx = left * elementSize.width + insets.left;
-			int rightx = right * elementSize.width + insets.left; // increase if drawing border to row name
+			int rightx = right * elementSize.width + insets.left; // increase
+			// if
+			// drawing
+			// border to
+			// row name
 			for (int row = top; row <= bottom; row++) {
 				int y = row * elementSize.height;
 				g.drawLine(leftx, y, rightx, y);
 			}
-			
-			
-			int y = 0; // if drawing border to column name need to change header
+
+			int y = 0; // if drawing border to column name need to change
+			// header
 			int bottomy = bottom * elementSize.height;
 			for (int column = left; column <= right; column++) {
 				int x = column * elementSize.width + insets.left;
@@ -448,55 +577,49 @@ public class HeatMap extends JPanel {
 		}
 	}
 
-
-
 	/**
-	 *  Calls the <code>configureEnclosingScrollPane</code> method.
-	 *
-	 *@see    #configureEnclosingScrollPane
+	 * Calls the <code>configureEnclosingScrollPane</code> method.
+	 * 
+	 * @see #configureEnclosingScrollPane
 	 */
 	public void addNotify() {
 		super.addNotify();
 		configureEnclosingScrollPane();
 	}
 
-
 	/**
-	 *  Calls the <code>unconfigureEnclosingScrollPane</code> method.
-	 *
-	 *@see    #unconfigureEnclosingScrollPane
+	 * Calls the <code>unconfigureEnclosingScrollPane</code> method.
+	 * 
+	 * @see #unconfigureEnclosingScrollPane
 	 */
 	public void removeNotify() {
 		unconfigureEnclosingScrollPane();
 		super.removeNotify();
 	}
 
-
 	public void resetSamplesOrder() {
 		samplesOrder = createDefaultOrdering(dataset.getColumnCount());
 	}
-
 
 	public void resetGenesOrder() {
 		genesOrder = createDefaultOrdering(dataset.getRowCount());
 	}
 
-
 	public void sortSamplesByColor() {
 		sortByClass(sampleClassVector, samplesOrder);
 	}
 
-
 	public void sortGenesByColor() {
-		//sortByClass(geneClassVector, genesOrder);
-// FIXME
+		// sortByClass(geneClassVector, genesOrder);
+		// FIXME
 	}
-
 
 	public BufferedImage snapshot() {
 		int headerHeight = header.height;
-		//BufferedImage bi = new BufferedImage(contentWidth, height + headerHeight, BufferedImage.TYPE_INT_RGB);
-		BufferedImage bi = new BufferedImage(contentWidth, height + headerHeight, BufferedImage.TYPE_3BYTE_BGR);
+		// BufferedImage bi = new BufferedImage(contentWidth, height +
+		// headerHeight, BufferedImage.TYPE_INT_RGB);
+		BufferedImage bi = new BufferedImage(contentWidth, height
+				+ headerHeight, BufferedImage.TYPE_3BYTE_BGR);
 
 		Graphics2D g2 = bi.createGraphics();
 		g2.setColor(Color.white);
@@ -511,11 +634,10 @@ public class HeatMap extends JPanel {
 		return bi;
 	}
 
-
-	/**  Updates the size of this heatmap panel and the header */
+	/** Updates the size of this heatmap panel and the header */
 	public void updateSize() {
 		Graphics2D g = (Graphics2D) getGraphics();
-		if(g != null) {
+		if (g != null) {
 			updateSize(g);
 			g.dispose();
 		}
@@ -523,67 +645,68 @@ public class HeatMap extends JPanel {
 
 	}
 
-
 	/**
-	 *  If this <code>HeatMap</code> is the <code>viewportView</code> of an
-	 *  enclosing <code>JScrollPane</code> (the usual situation), configure this
-	 *  <code>ScrollPane</code> by, amongst other things, installing the heat map's
-	 *  <code>header</code> as the <code>columnHeaderView</code> of the scroll
-	 *  pane. When a <code>HeatMap</code> is added to a <code>JScrollPane</code> in
-	 *  the usual way, using <code>new JScrollPane(myHeatMap)</code>, <code>addNotify</code>
-	 *  is called in the <code>HeatMap</code> (when the heat map is added to the
-	 *  viewport). <code>HeatMap</code>'s <code>addNotify</code> method in turn
-	 *  calls this method, which is protected so that this default installation
-	 *  procedure can be overridden by a subclass.
-	 *
-	 *@see    #addNotify
+	 * If this <code>HeatMap</code> is the <code>viewportView</code> of an
+	 * enclosing <code>JScrollPane</code> (the usual situation), configure
+	 * this <code>ScrollPane</code> by, amongst other things, installing the
+	 * heat map's <code>header</code> as the <code>columnHeaderView</code>
+	 * of the scroll pane. When a <code>HeatMap</code> is added to a
+	 * <code>JScrollPane</code> in the usual way, using
+	 * <code>new JScrollPane(myHeatMap)</code>, <code>addNotify</code> is
+	 * called in the <code>HeatMap</code> (when the heat map is added to the
+	 * viewport). <code>HeatMap</code>'s <code>addNotify</code> method in
+	 * turn calls this method, which is protected so that this default
+	 * installation procedure can be overridden by a subclass.
+	 * 
+	 * @see #addNotify
 	 */
 	protected void configureEnclosingScrollPane() {
 		Container p = getParent();
-		if(p instanceof JViewport) {
+		if (p instanceof JViewport) {
 			Container gp = p.getParent();
-			if(gp instanceof JScrollPane) {
+			if (gp instanceof JScrollPane) {
 				JScrollPane scrollPane = (JScrollPane) gp;
 				// Make certain we are the viewPort's view and not, for
 				// example, the rowHeaderView of the scrollPane -
 				// an implementor of fixed columns might do this.
 				JViewport viewport = scrollPane.getViewport();
-				if(viewport == null || viewport.getView() != this) {
+				if (viewport == null || viewport.getView() != this) {
 					return;
 				}
 				scrollPane.setColumnHeaderView(header);
 				header.updateSize(contentWidth, elementSize.width);
-				//  scrollPane.getViewport().setBackingStoreEnabled(true);
+				// scrollPane.getViewport().setBackingStoreEnabled(true);
 				Border border = scrollPane.getBorder();
-				if(border == null || border instanceof UIResource) {
-					scrollPane.setBorder(UIManager.getBorder("Table.scrollPaneBorder"));
+				if (border == null || border instanceof UIResource) {
+					scrollPane.setBorder(UIManager
+							.getBorder("Table.scrollPaneBorder"));
 				}
 			}
 		}
 	}
 
-
 	/**
-	 *  Reverses the effect of <code>configureEnclosingScrollPane</code> by
-	 *  replacing the <code>columnHeaderView</code> of the enclosing scroll pane
-	 *  with <code>null</code>. <code>HeatMap</code>'s <code>removeNotify</code>
-	 *  method calls this method, which is protected so that this default
-	 *  uninstallation procedure can be overridden by a subclass.
-	 *
-	 *@see    #removeNotify
-	 *@see    #configureEnclosingScrollPane
+	 * Reverses the effect of <code>configureEnclosingScrollPane</code> by
+	 * replacing the <code>columnHeaderView</code> of the enclosing scroll
+	 * pane with <code>null</code>. <code>HeatMap</code>'s
+	 * <code>removeNotify</code> method calls this method, which is protected
+	 * so that this default uninstallation procedure can be overridden by a
+	 * subclass.
+	 * 
+	 * @see #removeNotify
+	 * @see #configureEnclosingScrollPane
 	 */
 	protected void unconfigureEnclosingScrollPane() {
 		Container p = getParent();
-		if(p instanceof JViewport) {
+		if (p instanceof JViewport) {
 			Container gp = p.getParent();
-			if(gp instanceof JScrollPane) {
+			if (gp instanceof JScrollPane) {
 				JScrollPane scrollPane = (JScrollPane) gp;
 				// Make certain we are the viewPort's view and not, for
 				// example, the rowHeaderView of the scrollPane -
 				// an implementor of fixed columns might do this.
 				JViewport viewport = scrollPane.getViewport();
-				if(viewport == null || viewport.getView() != this) {
+				if (viewport == null || viewport.getView() != this) {
 					return;
 				}
 				scrollPane.setColumnHeaderView(null);
@@ -591,46 +714,45 @@ public class HeatMap extends JPanel {
 		}
 	}
 
-
-
 	static int[] createDefaultOrdering(int size) {
 		int[] order = new int[size];
-		for(int i = 0; i < order.length; i++) {
+		for (int i = 0; i < order.length; i++) {
 			order[i] = i;
 		}
 		return order;
 	}
 
-
 	/**
-	 *  Updates the size of this heatmap
-	 *
-	 *@param  g  Description of the Parameter
+	 * Updates the size of this heatmap
+	 * 
+	 * @param g
+	 *            Description of the Parameter
 	 */
 	void updateSize(Graphics2D g) {
 		int fontHeight = Math.min(14, elementSize.height);
 		font = new Font(fontFamilyName, fontStyle, fontHeight);
 		g.setFont(font);
 		setFont(font);
-		int width = elementSize.width * dataset.getColumnCount() + 1 + insets.left;
-		if(showGeneNames) {
+		int width = elementSize.width * dataset.getColumnCount() + 1
+				+ insets.left;
+		if (showGeneNames) {
 			this.geneNameWidth = getMaxGeneNamesWidth(g);
 			width += 20 + this.geneNameWidth;
 		}
-		if(g!=null) {
+		if (g != null) {
 			FontMetrics fm = g.getFontMetrics();
 			spaceAfterGeneNames = fm.stringWidth("xxxx");
 		}
-		
-		if(showGeneAnnotations) {
+
+		if (showGeneAnnotations) {
 			this.maxGeneAnnotationsWidth = getMaxGeneDescriptionsWidth(g);
-			if(showGeneNames) {
-				width += spaceAfterGeneNames;	
+			if (showGeneNames) {
+				width += spaceAfterGeneNames;
 			}
 			width += this.maxGeneAnnotationsWidth;
 		}
 
-		if(rowColorAnnotations!=null) {
+		if (rowColorAnnotations != null) {
 			width += this.elementSize.width + 10;
 		}
 
@@ -640,113 +762,114 @@ public class HeatMap extends JPanel {
 		setPreferredSize(new Dimension(width, height));
 	}
 
-
 	/**
-	 *  Fills rect with specified row and colunn. Used to draw one 'cell' in the
-	 *  heatmap.
-	 *
-	 *@param  g       Description of the Parameter
-	 *@param  row     Description of the Parameter
-	 *@param  column  Description of the Parameter
+	 * Fills rect with specified row and colunn. Used to draw one 'cell' in the
+	 * heatmap.
+	 * 
+	 * @param g
+	 *            Description of the Parameter
+	 * @param row
+	 *            Description of the Parameter
+	 * @param column
+	 *            Description of the Parameter
 	 */
 	void fillRectAt(Graphics2D g, int row, int column) {
 		int x = column * elementSize.width + insets.left;
 		int y = row * elementSize.height;
 
-//		boolean selected = (this.firstSelectedRow >= 0 && this.lastSelectedRow >= 0) && (row >= this.firstSelectedRow && row <= this.lastSelectedRow);
+		// boolean selected = (this.firstSelectedRow >= 0 &&
+		// this.lastSelectedRow >= 0) && (row >= this.firstSelectedRow && row <=
+		// this.lastSelectedRow);
 
-		//	selected = (selected || this.firstSelectedColumn >= 0 && this.lastSelectedColumn >= 0 && (column >= this.firstSelectedColumn && column <= this.lastSelectedColumn));
+		// selected = (selected || this.firstSelectedColumn >= 0 &&
+		// this.lastSelectedColumn >= 0 && (column >= this.firstSelectedColumn
+		// && column <= this.lastSelectedColumn));
 
-		
 		g.setColor(rowColorConverter.getColor(getRow(row), getColumn(column)));
 		g.fillRect(x, y, elementSize.width, elementSize.height);
 		/*
-		    if(selected) {
-		    g.setColor(maskColor);
-		    Composite oldComposite = g.getComposite();
-		    g.setComposite(SRC_OVER_COMPOSITE);
-		    g.fillRect(x, y, elementSize.width, elementSize.height);
-		    g.setComposite(oldComposite);
-		    }
-		  */
-		/*if(this.drawBorders) {
-			g.setColor(borderColor);
-			g.drawRect(x, y, elementSize.width - 1, elementSize.height - 1);
-		} */
+		 * if(selected) { g.setColor(maskColor); Composite oldComposite =
+		 * g.getComposite(); g.setComposite(SRC_OVER_COMPOSITE); g.fillRect(x,
+		 * y, elementSize.width, elementSize.height);
+		 * g.setComposite(oldComposite); }
+		 */
+		/*
+		 * if(this.drawBorders) { g.setColor(borderColor); g.drawRect(x, y,
+		 * elementSize.width - 1, elementSize.height - 1); }
+		 */
 	}
-
-
 
 	void drawGeneLabel(Graphics g, int row, int xLoc) {
 		/*
-		    if(classVectors.isEmpty()) {
-		    return;
-		    }
-		    ClassVector cv = (ClassVector) classVectors.get(0);
-		    int[] levels = cv.getLevels();
-		  */
-		Color c =  rowColorAnnotations[genesOrder[row]];
-		if(c==null) {
+		 * if(classVectors.isEmpty()) { return; } ClassVector cv = (ClassVector)
+		 * classVectors.get(0); int[] levels = cv.getLevels();
+		 */
+		Color c = rowColorAnnotations[genesOrder[row]];
+		if (c == null) {
 			return;
 		}
 		g.setColor(c);
-		g.fillRect(xLoc + insets.left, row * elementSize.height, elementSize.width - 1, elementSize.height);
+		g.fillRect(xLoc + insets.left, row * elementSize.height,
+				elementSize.width - 1, elementSize.height);
 	}
 
-
 	/**
-	 *  Draws rect with specified row, column and color.
-	 *
-	 *@param  g       Description of the Parameter
-	 *@param  row     Description of the Parameter
-	 *@param  column  Description of the Parameter
-	 *@param  color   Description of the Parameter
+	 * Draws rect with specified row, column and color.
+	 * 
+	 * @param g
+	 *            Description of the Parameter
+	 * @param row
+	 *            Description of the Parameter
+	 * @param column
+	 *            Description of the Parameter
+	 * @param color
+	 *            Description of the Parameter
 	 */
 	void drawRectAt(Graphics g, int row, int column, Color color) {
 		g.setColor(color);
-		g.drawRect(column * elementSize.width + insets.left, row * elementSize.height, elementSize.width - 1, elementSize.height - 1);
+		g.drawRect(column * elementSize.width + insets.left, row
+				* elementSize.height, elementSize.width - 1,
+				elementSize.height - 1);
 	}
 
-
 	/**
-	 *  Finds column for specified x coordinate.
-	 *
-	 *@param  targetx  Description of the Parameter
-	 *@return          -1 if column was not found.
+	 * Finds column for specified x coordinate.
+	 * 
+	 * @param targetx
+	 *            Description of the Parameter
+	 * @return -1 if column was not found.
 	 */
 	int findColumn(int targetx) {
 		int xSize = dataset.getColumnCount() * elementSize.width;
-		if(targetx < insets.left) {
+		if (targetx < insets.left) {
 			return -1;
 		}
 		/*
-		    if(targetx >= (xSize + insets.left) || targetx < insets.left) {
-		    return -1;
-		    }
-		  */
+		 * if(targetx >= (xSize + insets.left) || targetx < insets.left) {
+		 * return -1; }
+		 */
 		return (targetx - insets.left) / elementSize.width;
 	}
 
-
 	/**
-	 *  Finds row for specified y coordinate.
-	 *
-	 *@param  targety  Description of the Parameter
-	 *@return          -1 if row was not found.
+	 * Finds row for specified y coordinate.
+	 * 
+	 * @param targety
+	 *            Description of the Parameter
+	 * @return -1 if row was not found.
 	 */
 	int findRow(int targety) {
 		int ySize = dataset.getRowCount() * elementSize.height;
-		//	if(targety >= ySize || targety < 0) {
-		//		return -1;
-		//	}
+		// if(targety >= ySize || targety < 0) {
+		// return -1;
+		// }
 
-		if(targety < 0) {
+		if (targety < 0) {
 			return -1;
 		}
 
 		return targety / elementSize.height;
 	}
-
 
 	private void updateSizeAndRepaint() {
 		updateSize();
@@ -754,34 +877,32 @@ public class HeatMap extends JPanel {
 		header.repaint();
 	}
 
-
 	private void sortByClass(MyClassVector cv, int[] order) {
 		int index = 0;
-		for(int i = 0, length = cv.getClassCount(); i < length; i++) {
+		for (int i = 0, length = cv.getClassCount(); i < length; i++) {
 			int[] indices = cv.getIndices(i);
-			for(int j = 0; j < indices.length; j++) {
+			for (int j = 0; j < indices.length; j++) {
 				order[index++] = indices[j];
 			}
 		}
 	}
 
-
-
 	private void notifyElementSizeChangedListeners(ElementSizeChangedEvent e) {
 		Object[] listeners = eventListeners.getListenerList();
-		for(int i = listeners.length - 2; i >= 0; i -= 2) {
-			if(listeners[i] == ElementSizeChangedListener.class) {
-				((ElementSizeChangedListener) listeners[i + 1]).elementSizeChanged(e);
+		for (int i = listeners.length - 2; i >= 0; i -= 2) {
+			if (listeners[i] == ElementSizeChangedListener.class) {
+				((ElementSizeChangedListener) listeners[i + 1])
+						.elementSizeChanged(e);
 			}
 		}
 	}
 
-
 	public void setNormalization(int _normalization) {
-		if(_normalization != NORMALIZATION_ROW && _normalization != NORMALIZATION_GLOBAL) {
+		if (_normalization != NORMALIZATION_ROW
+				&& _normalization != NORMALIZATION_GLOBAL) {
 			throw new IllegalArgumentException("Unknown normalization");
 		}
-		if(_normalization==NORMALIZATION_ROW) {
+		if (_normalization == NORMALIZATION_ROW) {
 			rowColorConverter.setGlobalScale(false);
 		} else {
 			rowColorConverter.setGlobalScale(true);
@@ -790,328 +911,303 @@ public class HeatMap extends JPanel {
 		this.header.setDrawColorBar(false);
 	}
 
-
 	/**
-	 *  Sets the color respose to use when normalizing by row. Choices are
-	 *  COLOR_RESPONSE_LOG and COLOR_RESPONSE_LINEAR
-	 *
-	 *@param  respose  The new rowColorResponse value
+	 * Sets the color respose to use when normalizing by row. Choices are
+	 * COLOR_RESPONSE_LOG and COLOR_RESPONSE_LINEAR
+	 * 
+	 * @param respose
+	 *            The new rowColorResponse value
 	 */
 	public void setRowColorResponse(int respose) {
 		rowColorConverter.setColorResponse(respose);
 	}
-
 
 	public void setShowSampleNames(boolean b) {
 		header.setShowSampleNames(b);
 		updateSizeAndRepaint();
 	}
 
-
 	public void setShowGeneNames(boolean b) {
 		showGeneNames = b;
 		updateSizeAndRepaint();
 	}
 
-
 	public void setSampleClassVector(MyClassVector cv) {
 		ClassVectorListener[] listeners = sampleClassVector.getListeners();
 		sampleClassVector = cv;
 		EventObject e = new EventObject(sampleClassVector);
-		for(int i = 0; i < listeners.length; i++) {
+		for (int i = 0; i < listeners.length; i++) {
 			listeners[i].classVectorChanged(e);
 			sampleClassVector.addClassVectorListener(listeners[i]);
 		}
 
 	}
 
-
 	public void setGeneURL(String s) {
 		geneURL = s;
 	}
-
 
 	public void setShowToolTipText(boolean b) {
 		showToolTipText = b;
 	}
 
-
 	public void setElementSize(int width, int height) {
 		elementSize.width = width;
 		elementSize.height = height;
 		updateSize();
-		notifyElementSizeChangedListeners(new ElementSizeChangedEvent(this, width, height));
+		notifyElementSizeChangedListeners(new ElementSizeChangedEvent(this,
+				width, height));
 	}
 
 	public void setShowGridLines(boolean b) {
 		drawBorders = b;
 	}
-	
+
 	public void setGridLinesColor(Color c) {
-		if(c==null) {
-			throw new IllegalArgumentException("Grid lines color can not be null.");	
+		if (c == null) {
+			throw new IllegalArgumentException(
+					"Grid lines color can not be null.");
 		}
-		borderColor = c;		
+		borderColor = c;
 	}
 
 	/**
-	 *  Sets the left margin for the viewer
-	 *
-	 *@param  leftMargin  The new leftInset value
+	 * Sets the left margin for the viewer
+	 * 
+	 * @param leftMargin
+	 *            The new leftInset value
 	 */
 	void setLeftInset(int leftMargin) {
 		insets.left = leftMargin;
 		this.header.setLeftInset(leftMargin);
 	}
 
-
 	public HeatMapHeader getHeader() {
 		return header;
 	}
-
 
 	public String getGeneURL() {
 		return geneURL;
 	}
 
-
 	/**
-	 *  Returns the index of the first selected row, -1 if no row is selected.
-	 *
-	 *@return    the index of the first selected row
+	 * Returns the index of the first selected row, -1 if no row is selected.
+	 * 
+	 * @return the index of the first selected row
 	 */
 	public int getSelectedRow() {
 		return geneMouseListener.topSelectedGeneIndex;
 	}
 
-
 	/**
-	 *  Returns the number of selected rows.
-	 *
-	 *@return    the number of selected rows, 0 if no rows are selected
+	 * Returns the number of selected rows.
+	 * 
+	 * @return the number of selected rows, 0 if no rows are selected
 	 */
 	public int getSelectedRowCount() {
-		return geneMouseListener.bottomSelectedGeneIndex - geneMouseListener.topSelectedGeneIndex;
+		return geneMouseListener.bottomSelectedGeneIndex
+				- geneMouseListener.topSelectedGeneIndex;
 	}
-
 
 	public boolean isShowingSampleNames() {
 		return header.isShowingSampleNames();
 	}
 
-
 	/**
-	 *  Returns the index of the first selected column, -1 if no column is
-	 *  selected.
-	 *
-	 *@return    the index of the first selected column
+	 * Returns the index of the first selected column, -1 if no column is
+	 * selected.
+	 * 
+	 * @return the index of the first selected column
 	 */
 	public int getSelectedColumn() {
 		return header.getSelectedColumn();
 	}
 
-
 	/**
-	 *  Returns the number of selected columns.
-	 *
-	 *@return    the number of selected columns, 0 if no columns are selected
+	 * Returns the number of selected columns.
+	 * 
+	 * @return the number of selected columns, 0 if no columns are selected
 	 */
 	public int getSelectedColumnCount() {
 		return header.getSelectedColumnCount();
 	}
 
-
 	public String getToolTipText(MouseEvent event) {
-		if(!showToolTipText) {
+		if (!showToolTipText) {
 			return null;
 		}
 		int column = findColumn(event.getX());
 		int row = findRow(event.getY());
-		if(isLegalPosition(row, column)) {
+		if (isLegalPosition(row, column)) {
 			return "Value: " + numberFormat.format(dataset.get(row, column));
 		}
 		return null;
 	}
 
-
 	public boolean isShowingToolTipText() {
 		return showToolTipText;
 	}
-
 
 	public DoubleMatrix2D getDoubleMatrix2D() {
 		return dataset;
 	}
 
-
 	public ExpressionData getExpressionMatrix() {
 		return data;
 	}
-
 
 	public MyClassVector getSampleClassVector() {
 		return sampleClassVector;
 	}
 
-
 	public boolean isShowingGeneNames() {
 		return showGeneNames;
 	}
-
 
 	public int[] getGenesOrder() {
 		return genesOrder;
 	}
 
-
 	public int[] getSamplesOrder() {
 		return samplesOrder;
 	}
-
 
 	public Dimension getElementSize() {
 		return elementSize;
 	}
 
-
 	/**
-	 *  Returns the row index in the dataset corresponding to the passed index to
-	 *  the genesOrder array
-	 *
-	 *@param  row  Description of the Parameter
-	 *@return      The datasetRow value
+	 * Returns the row index in the dataset corresponding to the passed index to
+	 * the genesOrder array
+	 * 
+	 * @param row
+	 *            Description of the Parameter
+	 * @return The datasetRow value
 	 */
 	int getRow(int row) {
 		return this.genesOrder[row];
 	}
 
-
-
 	int getColumn(int column) {
 		return samplesOrder[column];
 	}
 
-
 	int getMaxGeneNamesWidth(Graphics2D g) {
 		return getMaxWidth(g, true);
 	}
-	
+
 	int getMaxGeneDescriptionsWidth(Graphics2D g) {
 		return getMaxWidth(g, false);
 	}
-	
+
 	/**
-	 *  Returns max width of annotation strings.
-	 *
-	 *@param  g  Description of the Parameter
-	 *@return    The maxWidth value
+	 * Returns max width of annotation strings.
+	 * 
+	 * @param g
+	 *            Description of the Parameter
+	 * @return The maxWidth value
 	 */
 	int getMaxWidth(Graphics2D g, boolean geneNames) {
-		if(g == null) {
+		if (g == null) {
 			return 0;
 		}
-		if(antiAliasing) {
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		if (antiAliasing) {
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_OFF);
+			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+					RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		}
 		FontMetrics fm = g.getFontMetrics();
 		int max = 0;
 		String str;
-		for(int i = 0; i < dataset.getRowCount(); i++) {
-			if(geneNames) {
+		for (int i = 0; i < dataset.getRowCount(); i++) {
+			if (geneNames) {
 				str = dataset.getRowName(i);
 			} else {
-				str = (String) getRowDescription(i);	
+				str = (String) getRowDescription(i);
 			}
-			if(str != null) {
+			if (str != null) {
 				max = Math.max(max, fm.stringWidth(str));
 			}
 		}
 		return max;
 	}
 
-
 	int getTopIndex(int top) {
-		if(top < 0) {
+		if (top < 0) {
 			return 0;
 		}
 		return top / elementSize.height;
 	}
 
-
 	int getLeftIndex(int left) {
-		if(left < insets.left) {
+		if (left < insets.left) {
 			return 0;
 		}
 		return (left - insets.left) / elementSize.width;
 	}
 
-
 	int getRightIndex(int right, int limit) {
-		if(right < 0) {
+		if (right < 0) {
 			return 0;
 		}
 		int result = right / elementSize.width + 1;
 		return result > limit ? limit : result;
 	}
 
-
 	int getBottomIndex(int bottom, int limit) {
-		if(bottom < 0) {
+		if (bottom < 0) {
 			return 0;
 		}
 		int result = bottom / elementSize.height + 1;
 		return result > limit ? limit : result;
 	}
 
-
 	boolean isLegalPosition(int row, int column) {
 		return (isLegalRow(row) && isLegalColumn(column));
 	}
 
-
 	boolean isLegalColumn(int column) {
-		if(column < 0 || column > dataset.getColumnCount() - 1) {
+		if (column < 0 || column > dataset.getColumnCount() - 1) {
 			return false;
 		}
 		return true;
 	}
-
 
 	boolean isLegalRow(int row) {
-		if(row < 0 || row >= dataset.getRowCount()) {
+		if (row < 0 || row >= dataset.getRowCount()) {
 			return false;
 		}
 		return true;
 	}
-
-
 
 	class GeneMouseListener extends MouseAdapter implements MouseMotionListener {
 		int bottomSelectedGeneIndex = -1;
+
 		int topSelectedGeneIndex = -1;
+
 		int lastYIndex = -1;
 
-
-		public void mouseMoved(MouseEvent e) { }
-
+		public void mouseMoved(MouseEvent e) {
+		}
 
 		public void mousePressed(MouseEvent e) {
 			// start of selection
 
 			bottomSelectedGeneIndex = findRow(e.getY());
-			System.out.println("bottomSelectedGeneIndex " + bottomSelectedGeneIndex);
+			System.out.println("bottomSelectedGeneIndex "
+					+ bottomSelectedGeneIndex);
 			// if click on 0th cell, top = 1 and bottom = 0
 			bottomSelectedGeneIndex++;
 			topSelectedGeneIndex = bottomSelectedGeneIndex - 1;
 			lastYIndex = bottomSelectedGeneIndex;
 
 			int uniqX = elementSize.width * dataset.getColumnCount() + 10;
-			if(rowColorAnnotations!=null) {
+			if (rowColorAnnotations != null) {
 				uniqX += elementSize.width;
 			}
 			int leftSel = uniqX + insets.left;
-			if(e.getX() > leftSel + geneNameWidth || e.getX() < leftSel) {
+			if (e.getX() > leftSel + geneNameWidth || e.getX() < leftSel) {
 				bottomSelectedGeneIndex = -1;
 				topSelectedGeneIndex = -1;
 			}
@@ -1119,55 +1215,59 @@ public class HeatMap extends JPanel {
 			repaint();
 		}
 
-
 		public void mouseDragged(MouseEvent e) {
 			updateMouse(e);
 			Rectangle r = null;
-			if(e.getY() <= 0) {
-				r = new Rectangle(e.getX(), e.getY(), elementSize.height, elementSize.height);
+			if (e.getY() <= 0) {
+				r = new Rectangle(e.getX(), e.getY(), elementSize.height,
+						elementSize.height);
 				// this rectangle becomes visible
 
 			} else {
-				r = new Rectangle(e.getX(), e.getY(), elementSize.height, elementSize.height);
+				r = new Rectangle(e.getX(), e.getY(), elementSize.height,
+						elementSize.height);
 				// this rectangle becomes visible
 				((JPanel) e.getSource()).scrollRectToVisible(r);
 			}
 			repaint();
 		}
 
-
 		private void updateMouse(MouseEvent e) {
 
 			int index = findRow(e.getY());
-			//System.out.println("index " + index);
-			if(index < 0) {
+			// System.out.println("index " + index);
+			if (index < 0) {
 				index = 0;
 			}
-			if(index > dataset.getRowCount()) {
+			if (index > dataset.getRowCount()) {
 				index = dataset.getRowCount();
 			}
-			// when moving up, update top index if click > top, else update bottom index
+			// when moving up, update top index if click > top, else update
+			// bottom index
 
-			if(index > lastYIndex) {
-				if(lastYIndex < bottomSelectedGeneIndex && index >= bottomSelectedGeneIndex) {
-					//crossover
+			if (index > lastYIndex) {
+				if (lastYIndex < bottomSelectedGeneIndex
+						&& index >= bottomSelectedGeneIndex) {
+					// crossover
 					topSelectedGeneIndex = bottomSelectedGeneIndex - 1;
 					bottomSelectedGeneIndex = index;
-				} else if(index >= bottomSelectedGeneIndex) {
+				} else if (index >= bottomSelectedGeneIndex) {
 
 					bottomSelectedGeneIndex = index;
 				} else {
 
 					topSelectedGeneIndex = index;
 				}
-			}  // when moving down, update bottom index if click < bottom, else update top index
+			} // when moving down, update bottom index if click < bottom, else
+			// update top index
 			else {
 
-				if(lastYIndex > topSelectedGeneIndex && index <= topSelectedGeneIndex) {
-					//crossover
+				if (lastYIndex > topSelectedGeneIndex
+						&& index <= topSelectedGeneIndex) {
+					// crossover
 					bottomSelectedGeneIndex = topSelectedGeneIndex + 1;
 					topSelectedGeneIndex = index;
-				} else if(index <= topSelectedGeneIndex) {
+				} else if (index <= topSelectedGeneIndex) {
 					topSelectedGeneIndex = index;
 
 				} else {
@@ -1181,113 +1281,111 @@ public class HeatMap extends JPanel {
 
 	}
 
-
 	/**
-	 *  The class to listen to mouse events.
-	 *
-	 *@author     jgould
-	 *@created    March 10, 2004
+	 * The class to listen to mouse events.
+	 * 
+	 * @author jgould
+	 * @created March 10, 2004
 	 */
 	class Listener extends MouseAdapter implements MouseMotionListener {
 
 		String oldStatusText;
+
 		int oldRow = -1;
+
 		int oldColumn = -1;
 
-
 		public void mouseClicked(MouseEvent event) {
-			if(SwingUtilities.isRightMouseButton(event)) {
+			if (SwingUtilities.isRightMouseButton(event)) {
 				return;
 			}
 			int column = findColumn(event.getX());
 			int row = findRow(event.getY());
 
 			int clickCount = event.getClickCount();
-			if(clickCount >= 2 && column >= dataset.getColumnCount() && isLegalRow(row)) { // double click on gene name
+			if (clickCount >= 2 && column >= dataset.getColumnCount()
+					&& isLegalRow(row)) { // double click on gene name
 				String geneName = dataset.getRowName(row);
 				String url = geneURL.replaceAll(GENE_QUERY, geneName);
 				try {
-					edu.mit.broad.modules.heatmap.util.BrowserLauncher.openURL(url);
-				} catch(java.io.IOException ioe) {
+					edu.mit.broad.modules.heatmap.util.BrowserLauncher
+							.openURL(url);
+				} catch (java.io.IOException ioe) {
 					ioe.printStackTrace();
 				}
 				return;
 			}
 
-			if(!isLegalPosition(row, column)) {
+			if (!isLegalPosition(row, column)) {
 				return;
 			}
 			// TODO make plot of genes
 
 		}
 
-
 		public void mouseMoved(MouseEvent event) {
-			if(dataset.getColumnCount() == 0 || event.isShiftDown()) {
+			if (dataset.getColumnCount() == 0 || event.isShiftDown()) {
 				return;
 			}
 			int column = findColumn(event.getX());
 			int row = findRow(event.getY());
-			if(isCurrentPosition(row, column)) {
+			if (isCurrentPosition(row, column)) {
 				return;
 			}
 			Graphics g = null;
-			if(isLegalPosition(row, column)) {
-				g = getGraphics(); //FIXME
+			if (isLegalPosition(row, column)) {
+				g = getGraphics(); // FIXME
 				drawRectAt(g, row, column, Color.white); // draw border
-				//framework.setStatusText("Gene: " + data.getUniqueId(getMultipleArrayDataRow(row)) + " Sample: " + data.getSampleName(dataset.getSampleIndex(getColumn(column))) + " Value: " + dataset.get(getRow(row), getColumn(column)));
+				// framework.setStatusText("Gene: " +
+				// data.getUniqueId(getMultipleArrayDataRow(row)) + " Sample: "
+				// +
+				// data.getSampleName(dataset.getSampleIndex(getColumn(column)))
+				// + " Value: " + dataset.get(getRow(row), getColumn(column)));
 			} else {
-				; //framework.setStatusText(oldStatusText);
+				; // framework.setStatusText(oldStatusText);
 			}
-			if(isLegalPosition(oldRow, oldColumn)) {
+			if (isLegalPosition(oldRow, oldColumn)) {
 				g = g != null ? g : getGraphics(); // FIXME
 				fillRectAt((Graphics2D) g, oldRow, oldColumn);
 			}
 			setOldPosition(row, column);
-			if(g != null) {
+			if (g != null) {
 				g.dispose();
 			}
 		}
 
-
-
 		public void mouseEntered(MouseEvent event) {
-			//	oldStatusText = framework.getStatusText();
+			// oldStatusText = framework.getStatusText();
 		}
 
-
 		public void mouseExited(MouseEvent event) {
-			if(isLegalPosition(oldRow, oldColumn)) {
+			if (isLegalPosition(oldRow, oldColumn)) {
 				Graphics g = getGraphics(); // FIXME
 				fillRectAt((Graphics2D) g, oldRow, oldColumn);
 				g.dispose();
 			}
 			setOldPosition(-1, -1);
-			//framework.setStatusText(oldStatusText);
+			// framework.setStatusText(oldStatusText);
 		}
 
-
-		public void mouseDragged(MouseEvent event) { }
-
+		public void mouseDragged(MouseEvent event) {
+		}
 
 		void setOldPosition(int row, int column) {
 			oldColumn = column;
 			oldRow = row;
 		}
 
-
 		boolean isCurrentPosition(int row, int column) {
 			return (row == oldRow && column == oldColumn);
 		}
 	}
-
 
 	private class SampleClassVectorListener implements ClassVectorListener {
 		public void classVectorChanged(EventObject e) {
 
 		}
 	}
-
 
 	private class GeneClassVectorListener implements ClassVectorListener {
 		public void classVectorChanged(EventObject e) {
@@ -1296,4 +1394,3 @@ public class HeatMap extends JPanel {
 	}
 
 }
-
