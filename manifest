@@ -1,7 +1,7 @@
 #HeatMapImage
 #Sat Apr 30 10:53:03 EDT 2005
 author=Joshua Gould, Broad Institute
-commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>epsgraphics.jar<path.separator><libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -c<row.size> -r<column.size> -g<grid> -l<grid.color> -a<row.annotations> -s<row.names> -f<feature.list.filename> -h<highlight.color> -n<color.scheme>
+commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>epsgraphics.jar<path.separator><libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.heatmap.HeatMap <input.filename> <output.file> <output.file.format> -c<row.size> -r<column.size> -g<grid> -l<grid.color> -a<row.annotations> -s<row.names> -f<feature.list.filename> -h<highlight.color> -n<color.scheme> -m<color.map.filename>
 cpuType=any
 description=Creates a heat map from a dataset
 fileFormat=jpeg;png;tiff;bmp;eps
@@ -115,5 +115,15 @@ p12_optional=on
 p12_prefix_when_specified=
 p12_type=java.lang.String
 p12_value=row normalized;global
+
+p13_default_value=
+p13_description=Color map
+p13_MODE=IN
+p13_name=color.map.filename
+p13_optional=on
+p13_prefix_when_specified=
+p13_TYPE=FILE
+p13_type=java.io.File
+p13_value=
 
 
