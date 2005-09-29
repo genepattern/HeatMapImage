@@ -3,6 +3,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.text.NumberFormat;
 import javax.swing.*;
+
+import org.genepattern.data.expr.IExpressionData;
 import org.genepattern.data.matrix.*;
 
 /**
@@ -19,7 +21,7 @@ public final class RowColorConverter {
 	 static int COLOR_RESPONSE_LOG = HeatMap.COLOR_RESPONSE_LOG;
 	 static int COLOR_RESPONSE_LINEAR = HeatMap.COLOR_RESPONSE_LINEAR;
 	int response = COLOR_RESPONSE_LINEAR;
-	DoubleMatrix2D dataset;
+	IExpressionData dataset;
 	/**  the last row for which max, min, and mean were computed */
 	int lastRow = -1;
 	static Color missingColor = new Color(128, 128, 128);
@@ -50,7 +52,7 @@ public final class RowColorConverter {
 	 * @param  dataset   Description of the Parameter
 	 * @param  response  Description of the Parameter
 	 */
-	public RowColorConverter(int[] colormap, int response, DoubleMatrix2D dataset) {
+	public RowColorConverter(int[] colormap, int response, IExpressionData dataset) {
 		this(getColorMap(colormap), response, dataset);
 	}
 	
@@ -66,7 +68,7 @@ public final class RowColorConverter {
 		return colors;
 	}
 	
-	public RowColorConverter(Color[] colors, int response, DoubleMatrix2D dataset) {
+	public RowColorConverter(Color[] colors, int response, IExpressionData dataset) {
 		this.colors = colors;
 		this.slots = new double[colors.length];
 		if(response != COLOR_RESPONSE_LINEAR && response != COLOR_RESPONSE_LOG) {
@@ -76,7 +78,7 @@ public final class RowColorConverter {
 		this.dataset = dataset;
 	}
 	
-	public RowColorConverter(int response, DoubleMatrix2D dataset) {
+	public RowColorConverter(int response, IExpressionData dataset) {
 		this(defaultColorMap, response, dataset);
 	}
 
@@ -88,7 +90,7 @@ public final class RowColorConverter {
 			mean = 0;
 			for(int i = 0, rows = dataset.getRowCount(); i < rows; i++) {
 				for(int j = 0, columns = dataset.getColumnCount(); j < columns; j++) {
-					double d = dataset.get(i, j);
+					double d = dataset.getValue(i, j);
 					max = d > max ? d : max;
 					min = d < min ? d : min;
 					mean +=d;
@@ -128,7 +130,7 @@ public final class RowColorConverter {
 			calculateRowStats(row);
 			lastRow = row;
 		}
-		double val = dataset.get(row, column);
+		double val = dataset.getValue(row, column);
 		if(Double.isNaN(val)) {
 			return missingColor;
 		}
@@ -212,7 +214,7 @@ public final class RowColorConverter {
 		theMean = 0;
 		int numDataPoints = 0;// some arrays might not have data for all genes
 		for(int i = 0; i < num; i++) {
-			double tmpVal = (double) dataset.get(rowNumber, i);
+			double tmpVal = dataset.getValue(rowNumber, i);
 			if(Double.isNaN(tmpVal)) {
 				continue;
 			}

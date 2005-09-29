@@ -34,6 +34,7 @@ import javax.swing.event.EventListenerList;
 import javax.swing.plaf.UIResource;
 
 import org.genepattern.data.expr.ExpressionData;
+import org.genepattern.data.expr.IExpressionData;
 import org.genepattern.data.matrix.DoubleMatrix2D;
 import org.genepattern.io.expr.ExpressionDataCreator;
 import org.genepattern.io.expr.IExpressionDataReader;
@@ -45,10 +46,7 @@ import com.sun.media.jai.codec.JPEGEncodeParam;
 /**
  * This class is used to draw a heat map.
  * 
- * @author Aleksey D.Rezantsev
  * @author Joshua Gould
- * @created March 10, 2004
- * @version 1.0
  */
 public class HeatMap extends JPanel {
 
@@ -63,18 +61,16 @@ public class HeatMap extends JPanel {
 	/** The url to go to when the user double clicks the gene name */
 	public final static String GENE_QUERY = "<query>";
 
-	DoubleMatrix2D dataset;
-
 	String[] rowDescriptions;
 
-	ExpressionData data;
+	IExpressionData data;
 
 	MyClassVector sampleClassVector;
 
-	/** max value in the dataset */
+	/** max value in the data */
 	double maxValue = -Double.MAX_VALUE;
 
-	/** min value in the dataset */
+	/** min value in the data */
 	double minValue = Double.MAX_VALUE;
 
 	/** width and height of one 'cell' in the heatmap */
@@ -144,12 +140,12 @@ public class HeatMap extends JPanel {
 	/** if not null, draw a filled square to the left of the row name */
 	Color[] rowColorAnnotations;
 
-	public HeatMap(ExpressionData data, Color[] colorMap) {
-		this(data, null, null, colorMap);
+	public HeatMap(IExpressionData data2, Color[] colorMap) {
+		this(data2, null, null, colorMap);
 	}
 
 	/**
-	 * Constructs an <code>HeatMap</code> with specified dataset, genesOrder,
+	 * Constructs an <code>HeatMap</code> with specified data, genesOrder,
 	 * samples order and draw annotations attribute.
 	 * 
 	 * @param genesOrder
@@ -159,19 +155,24 @@ public class HeatMap extends JPanel {
 	 * @param data
 	 *            Description of the Parameter
 	 */
-	public HeatMap(ExpressionData data, int[] genesOrder, int[] samplesOrder,
+	public HeatMap(IExpressionData data, int[] genesOrder, int[] samplesOrder,
 			Color[] colorMap) {
 		this.data = data;
-		this.dataset = (DoubleMatrix2D) data.getExpressionMatrix();
-		this.rowDescriptions = data.getRowDescriptions();
-		this.sampleClassVector = new MyClassVector(dataset.getColumnCount());
+		this.rowDescriptions = new String[data.getRowCount()];
+		for (int i = 0, rows = data.getRowCount(); i < rows; i++) {
+			rowDescriptions[i] = data.getRowDescription(i);
+			if (rowDescriptions[i] == null) {
+				rowDescriptions[i] = "";
+			}
+		}
+
+		this.sampleClassVector = new MyClassVector(data.getColumnCount());
 		sampleClassVector.setColor(sampleClassVector.getClassName(0),
 				Color.black);
-		this.genesOrder = genesOrder == null ? createDefaultOrdering(dataset
+		this.genesOrder = genesOrder == null ? createDefaultOrdering(data
 				.getRowCount()) : genesOrder;
-		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(dataset
-				.getColumnCount())
-				: samplesOrder;
+		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(data
+				.getColumnCount()) : samplesOrder;
 		this.header = new HeatMapHeader(this);
 		sampleClassVector.addClassVectorListener(header);
 		setBackground(Color.white);
@@ -179,7 +180,7 @@ public class HeatMap extends JPanel {
 		addMouseListener(listener);
 		addMouseMotionListener(listener);
 		rowColorConverter = new RowColorConverter(colorMap,
-				COLOR_RESPONSE_LINEAR, dataset);
+				COLOR_RESPONSE_LINEAR, data);
 		setNormalization(NORMALIZATION_ROW);
 		// ToolTipManager toolTipManager = ToolTipManager.sharedInstance();
 		// toolTipManager.registerComponent(this);
@@ -243,98 +244,65 @@ public class HeatMap extends JPanel {
 	}
 
 	/**
-	 * Create a heatmap image from the command line <input.filename>
-	 * <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
-	 * <normalization> -grid <grid> -ra <show.row.descriptions> -p
-	 * <show.row.ids>
 	 * 
-	 * @param args
-	 *            The command line arguments
+	 * @param data
+	 *            The data to draw the heatmap for
+	 * @param outputFileName
+	 *            The name of the output file. The correct file extension will
+	 *            be added if it does not exist
+	 * @param outputFileFormat
+	 *            The output file format. One of jpeg, png, tiff, bmp, eps.
+	 * @param columnSize
+	 *            The size in pixels of an element along the x axis
+	 * @param rowSize
+	 *            The size in pixels of an element along the y axis
+	 * @param normalization
+	 *            The normalization method to use. One of
+	 *            <tt>NORMALIZATION_ROW</tt> or <tt>NORMALIZATION_GLOBAL</tt>
+	 * @param drawGrid
+	 *            Whether to draw a grid between elements
+	 * @param gridLinesColor
+	 *            The grid color when <tt>drawGrid</tt> is <tt>true</tt>
+	 * @param drawRowNames
+	 *            Whether to draw row names
+	 * @param drawRowDescriptions
+	 *            Whether to draw row annotations
+	 * @param featureList
+	 *            List of row names to highlight in the heat map or
+	 *            <tt>null</tt>
+	 * @param featureListColor
+	 *            The color to highlight the features in the feature list when
+	 *            <tt>featureList</tt> is not <tt>null</tt>
 	 */
-	public static void main(String[] args) {
-		String inputFileName = args[0];
-		String outputFileName = args[1];
-		String outputFileFormat = args[2];
-
-		IExpressionDataReader reader = AnalysisUtil
-				.getExpressionReader(inputFileName);
-
-		ExpressionData data = (ExpressionData) AnalysisUtil.readExpressionData(
-				reader, inputFileName, new ExpressionDataCreator());
-
-		int columnWidth = 10;
-		int rowWidth = 10;
-		String normalization = "row normalized";
-		Color gridLinesColor = Color.black;
-		boolean showGridLines = false;
-		boolean showGeneAnnotations = false;
-		boolean showGeneNames = true;
-		java.util.List featureList = null;
-		Color highlightColor = Color.red;
-		Color[] colorMap = null;
-		for (int i = 3; i < args.length; i++) { // 0th arg is input file name,
-			// 1st arg is output file name,
-			// 2nd arg is format
-			String arg = args[i].substring(0, 2);
-			String value = args[i].substring(2, args[i].length());
-			if (value.equals("")) {
-				continue;
-			}
-
-			if (arg.equals("-c")) {
-				columnWidth = Integer.parseInt(value);
-			} else if (arg.equals("-r")) {
-				rowWidth = Integer.parseInt(value);
-			} else if (arg.equals("-n")) {
-				normalization = value;
-				if (!normalization.equals("global")
-						&& !normalization.equals("row normalized")) {
-					exit("Invalid normalization");
-				}
-			} else if (arg.equals("-g")) {
-				showGridLines = "yes".equalsIgnoreCase(value);
-			} else if (arg.equals("-l")) {
-				// r:g:b triplet
-				gridLinesColor = createColor(value);
-			} else if (arg.equals("-a")) {
-				showGeneAnnotations = "yes".equalsIgnoreCase(value);
-			} else if (arg.equals("-s")) {
-				showGeneNames = "yes".equalsIgnoreCase(value);
-			} else if (arg.equals("-f")) {
-				featureList = AnalysisUtil.readFeatureList(value);
-			} else if (arg.equals("-h")) {
-				highlightColor = createColor(value);
-			} else if (arg.equals("-m")) {
-				colorMap = parseColorMap(value);
-			} else {
-				exit("unknown option " + arg);
-			}
-		}
-		Color[] _colorMap = colorMap != null ? colorMap : RowColorConverter
-				.getDefaultColorMap();
-		HeatMap heatMap = new HeatMap(data, _colorMap);
+	public static void createImage(IExpressionData data, String outputFileName,
+			String outputFileFormat, int columnSize, int rowSize,
+			int normalization, boolean drawGrid, Color gridLinesColor,
+			boolean drawRowNames, boolean drawRowDescriptions,
+			List featureList, Color featureListColor) {
+		HeatMap heatMap = new HeatMap(data, RowColorConverter
+				.getDefaultColorMap());
 
 		if (featureList != null) {
 			heatMap.rowColorAnnotations = new Color[data.getRowCount()];
 			for (int i = 0; i < featureList.size(); i++) {
 				String feature = (String) featureList.get(i);
-				int index = data.getExpressionMatrix().getRowIndex(feature);
+				int index = data.getRowIndex(feature);
 				if (index < 0) {
 					System.out.println(feature + " not found in feature list.");
 				} else {
-					heatMap.rowColorAnnotations[index] = highlightColor;
+					heatMap.rowColorAnnotations[index] = featureListColor;
 				}
 			}
 		}
 
-		heatMap.showGeneAnnotations = showGeneAnnotations;
-		heatMap.showGeneNames = showGeneNames;
-		heatMap.setShowGridLines(showGridLines);
+		heatMap.showGeneAnnotations = drawRowDescriptions;
+		heatMap.showGeneNames = drawRowNames;
+		heatMap.setShowGridLines(drawGrid);
 		heatMap.setGridLinesColor(gridLinesColor);
 
-		heatMap.setElementSize(rowWidth, columnWidth);
+		heatMap.setElementSize(rowSize, columnSize);
 
-		if (normalization.equals("global")) { // default is row
+		if (normalization == NORMALIZATION_GLOBAL) { // default is row
 			heatMap.setNormalization(HeatMap.NORMALIZATION_GLOBAL);
 		}
 		Graphics2D epsGraphics = null;
@@ -423,6 +391,79 @@ public class HeatMap extends JPanel {
 	}
 
 	/**
+	 * Create a heatmap image from the command line <input.filename>
+	 * <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
+	 * <normalization> -grid <grid> -ra <show.row.descriptions> -p
+	 * <show.row.ids>
+	 * 
+	 * @param args
+	 *            The command line arguments
+	 */
+	public static void main(String[] args) {
+		String inputFileName = args[0];
+		String outputFileName = args[1];
+		String outputFileFormat = args[2];
+
+		IExpressionDataReader reader = AnalysisUtil
+				.getExpressionReader(inputFileName);
+
+		ExpressionData data = (ExpressionData) AnalysisUtil.readExpressionData(
+				reader, inputFileName, new ExpressionDataCreator());
+
+		int columnWidth = 10;
+		int rowWidth = 10;
+		String normalization = "row normalized";
+		Color gridLinesColor = Color.black;
+		boolean showGridLines = false;
+		boolean showGeneAnnotations = false;
+		boolean showGeneNames = true;
+		java.util.List featureList = null;
+		Color highlightColor = Color.red;
+		Color[] colorMap = null;
+		for (int i = 3; i < args.length; i++) { // 0th arg is input file name,
+			// 1st arg is output file name,
+			// 2nd arg is format
+			String arg = args[i].substring(0, 2);
+			String value = args[i].substring(2, args[i].length());
+			if (value.equals("")) {
+				continue;
+			}
+
+			if (arg.equals("-c")) {
+				columnWidth = Integer.parseInt(value);
+			} else if (arg.equals("-r")) {
+				rowWidth = Integer.parseInt(value);
+			} else if (arg.equals("-n")) {
+				normalization = value;
+				if (!normalization.equals("global")
+						&& !normalization.equals("row normalized")) {
+					exit("Invalid normalization");
+				}
+			} else if (arg.equals("-g")) {
+				showGridLines = "yes".equalsIgnoreCase(value);
+			} else if (arg.equals("-l")) {
+				// r:g:b triplet
+				gridLinesColor = createColor(value);
+			} else if (arg.equals("-a")) {
+				showGeneAnnotations = "yes".equalsIgnoreCase(value);
+			} else if (arg.equals("-s")) {
+				showGeneNames = "yes".equalsIgnoreCase(value);
+			} else if (arg.equals("-f")) {
+				featureList = AnalysisUtil.readFeatureList(value);
+			} else if (arg.equals("-h")) {
+				highlightColor = createColor(value);
+			} else if (arg.equals("-m")) {
+				colorMap = parseColorMap(value);
+			} else {
+				exit("unknown option " + arg);
+			}
+		}
+		Color[] _colorMap = colorMap != null ? colorMap : RowColorConverter
+				.getDefaultColorMap();
+
+	}
+
+	/**
 	 * Adds a listener to be notified when the element size is changed.
 	 * 
 	 * @param l
@@ -449,16 +490,16 @@ public class HeatMap extends JPanel {
 	}
 
 	void draw(Graphics2D g) {
-		final int samples = dataset.getColumnCount();
+		final int samples = data.getColumnCount();
 		Rectangle bounds = g.getClipBounds();
 		int left = 0;
 		int right = samples;
 		int top = 0;
-		int bottom = dataset.getRowCount();
+		int bottom = data.getRowCount();
 
 		if (bounds != null) {
 			top = getTopIndex(bounds.y);
-			bottom = getBottomIndex(bounds.y + bounds.height, dataset
+			bottom = getBottomIndex(bounds.y + bounds.height, data
 					.getRowCount());
 			left = getLeftIndex(bounds.x);
 			right = getRightIndex(bounds.x + bounds.width, samples);
@@ -484,7 +525,7 @@ public class HeatMap extends JPanel {
 		}
 		if (showGeneNames
 				&& geneMouseListener.topSelectedGeneIndex >= 0
-				&& geneMouseListener.bottomSelectedGeneIndex <= dataset
+				&& geneMouseListener.bottomSelectedGeneIndex <= data
 						.getRowCount()) {
 			g2.setColor(Color.yellow);
 			Composite oldComposite = g2.getComposite();
@@ -530,7 +571,7 @@ public class HeatMap extends JPanel {
 					// int annY = (row ) * elementSize.height;
 
 					if (this.showGeneNames) {
-						String label = dataset.getRowName(row);
+						String label = data.getRowName(row);
 						g
 								.drawString(label, uniqX + insets.left, annY
 										- descent);
@@ -598,11 +639,11 @@ public class HeatMap extends JPanel {
 	}
 
 	public void resetSamplesOrder() {
-		samplesOrder = createDefaultOrdering(dataset.getColumnCount());
+		samplesOrder = createDefaultOrdering(data.getColumnCount());
 	}
 
 	public void resetGenesOrder() {
-		genesOrder = createDefaultOrdering(dataset.getRowCount());
+		genesOrder = createDefaultOrdering(data.getRowCount());
 	}
 
 	public void sortSamplesByColor() {
@@ -733,8 +774,7 @@ public class HeatMap extends JPanel {
 		font = new Font(fontFamilyName, fontStyle, fontHeight);
 		g.setFont(font);
 		setFont(font);
-		int width = elementSize.width * dataset.getColumnCount() + 1
-				+ insets.left;
+		int width = elementSize.width * data.getColumnCount() + 1 + insets.left;
 		if (showGeneNames) {
 			this.geneNameWidth = getMaxGeneNamesWidth(g);
 			width += 20 + this.geneNameWidth;
@@ -757,7 +797,7 @@ public class HeatMap extends JPanel {
 		}
 
 		this.contentWidth = width;
-		this.height = elementSize.height * dataset.getRowCount() + 1;
+		this.height = elementSize.height * data.getRowCount() + 1;
 		setSize(width, height);
 		setPreferredSize(new Dimension(width, height));
 	}
@@ -840,7 +880,7 @@ public class HeatMap extends JPanel {
 	 * @return -1 if column was not found.
 	 */
 	int findColumn(int targetx) {
-		int xSize = dataset.getColumnCount() * elementSize.width;
+		int xSize = data.getColumnCount() * elementSize.width;
 		if (targetx < insets.left) {
 			return -1;
 		}
@@ -859,7 +899,7 @@ public class HeatMap extends JPanel {
 	 * @return -1 if row was not found.
 	 */
 	int findRow(int targety) {
-		int ySize = dataset.getRowCount() * elementSize.height;
+		int ySize = data.getRowCount() * elementSize.height;
 		// if(targety >= ySize || targety < 0) {
 		// return -1;
 		// }
@@ -1039,21 +1079,13 @@ public class HeatMap extends JPanel {
 		int column = findColumn(event.getX());
 		int row = findRow(event.getY());
 		if (isLegalPosition(row, column)) {
-			return "Value: " + numberFormat.format(dataset.get(row, column));
+			return "Value: " + numberFormat.format(data.getValue(row, column));
 		}
 		return null;
 	}
 
 	public boolean isShowingToolTipText() {
 		return showToolTipText;
-	}
-
-	public DoubleMatrix2D getDoubleMatrix2D() {
-		return dataset;
-	}
-
-	public ExpressionData getExpressionMatrix() {
-		return data;
 	}
 
 	public MyClassVector getSampleClassVector() {
@@ -1077,7 +1109,7 @@ public class HeatMap extends JPanel {
 	}
 
 	/**
-	 * Returns the row index in the dataset corresponding to the passed index to
+	 * Returns the row index in the data corresponding to the passed index to
 	 * the genesOrder array
 	 * 
 	 * @param row
@@ -1120,9 +1152,9 @@ public class HeatMap extends JPanel {
 		FontMetrics fm = g.getFontMetrics();
 		int max = 0;
 		String str;
-		for (int i = 0; i < dataset.getRowCount(); i++) {
+		for (int i = 0; i < data.getRowCount(); i++) {
 			if (geneNames) {
-				str = dataset.getRowName(i);
+				str = data.getRowName(i);
 			} else {
 				str = (String) getRowDescription(i);
 			}
@@ -1168,14 +1200,14 @@ public class HeatMap extends JPanel {
 	}
 
 	boolean isLegalColumn(int column) {
-		if (column < 0 || column > dataset.getColumnCount() - 1) {
+		if (column < 0 || column > data.getColumnCount() - 1) {
 			return false;
 		}
 		return true;
 	}
 
 	boolean isLegalRow(int row) {
-		if (row < 0 || row >= dataset.getRowCount()) {
+		if (row < 0 || row >= data.getRowCount()) {
 			return false;
 		}
 		return true;
@@ -1202,7 +1234,7 @@ public class HeatMap extends JPanel {
 			topSelectedGeneIndex = bottomSelectedGeneIndex - 1;
 			lastYIndex = bottomSelectedGeneIndex;
 
-			int uniqX = elementSize.width * dataset.getColumnCount() + 10;
+			int uniqX = elementSize.width * data.getColumnCount() + 10;
 			if (rowColorAnnotations != null) {
 				uniqX += elementSize.width;
 			}
@@ -1239,8 +1271,8 @@ public class HeatMap extends JPanel {
 			if (index < 0) {
 				index = 0;
 			}
-			if (index > dataset.getRowCount()) {
-				index = dataset.getRowCount();
+			if (index > data.getRowCount()) {
+				index = data.getRowCount();
 			}
 			// when moving up, update top index if click > top, else update
 			// bottom index
@@ -1303,9 +1335,9 @@ public class HeatMap extends JPanel {
 			int row = findRow(event.getY());
 
 			int clickCount = event.getClickCount();
-			if (clickCount >= 2 && column >= dataset.getColumnCount()
+			if (clickCount >= 2 && column >= data.getColumnCount()
 					&& isLegalRow(row)) { // double click on gene name
-				String geneName = dataset.getRowName(row);
+				String geneName = data.getRowName(row);
 				String url = geneURL.replaceAll(GENE_QUERY, geneName);
 				try {
 					edu.mit.broad.modules.heatmap.util.BrowserLauncher
@@ -1324,7 +1356,7 @@ public class HeatMap extends JPanel {
 		}
 
 		public void mouseMoved(MouseEvent event) {
-			if (dataset.getColumnCount() == 0 || event.isShiftDown()) {
+			if (data.getColumnCount() == 0 || event.isShiftDown()) {
 				return;
 			}
 			int column = findColumn(event.getX());
@@ -1339,8 +1371,8 @@ public class HeatMap extends JPanel {
 				// framework.setStatusText("Gene: " +
 				// data.getUniqueId(getMultipleArrayDataRow(row)) + " Sample: "
 				// +
-				// data.getSampleName(dataset.getSampleIndex(getColumn(column)))
-				// + " Value: " + dataset.get(getRow(row), getColumn(column)));
+				// data.getSampleName(data.getSampleIndex(getColumn(column)))
+				// + " Value: " + data.get(getRow(row), getColumn(column)));
 			} else {
 				; // framework.setStatusText(oldStatusText);
 			}

@@ -82,10 +82,10 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		FontMetrics hfm = g.getFontMetrics();
 		int maxHeight = 0;
 
-		final int size = heatMap.dataset.getColumnCount();
+		final int size = heatMap.data.getColumnCount();
 		if(drawSampleNames) {
 			for(int feature = 0; feature < size; feature++) {
-				String name = heatMap.dataset.getColumnName(heatMap.getColumn(feature));
+				String name = heatMap.data.getColumnName(heatMap.getColumn(feature));
 				maxHeight = Math.max(maxHeight, hfm.stringWidth(name));
 			}
 		}
@@ -158,7 +158,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 	 * @param  g  Description of the Parameter
 	 */
 	private void drawHeader(Graphics2D g) {
-		final int samples = heatMap.dataset.getColumnCount();
+		final int samples = heatMap.data.getColumnCount();
 		if(samples == 0) {
 			return;
 		}
@@ -221,7 +221,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		if(drawSampleNames) {
 			g.rotate(-Math.PI / 2);
 			for(int sample = left; sample < right; sample++) {
-				String name = heatMap.dataset.getColumnName(heatMap.samplesOrder[sample]);
+				String name = heatMap.data.getColumnName(heatMap.samplesOrder[sample]);
 				//g.drawString(name, h, hfm.getAscent() + heatMap.elementSize.width * sample + heatMap.elementSize.width / 2 + insets.left);
 				g.drawString(name, h, hfm.getAscent() + heatMap.elementSize.width * sample + insets.left);
 			}
@@ -289,7 +289,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			// if click on 0th cell, left = 0 and right = 1
 			lastIndex = firstIndex + 1;
 
-			if(firstIndex < 0 || lastIndex > heatMap.dataset.getColumnCount()) {
+			if(firstIndex < 0 || lastIndex > heatMap.data.getColumnCount()) {
 				firstIndex = -1;
 				lastIndex = -1;
 			} else if(!yIsInRange(e)) {
@@ -306,8 +306,8 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			int index = heatMap.findColumn(e.getX());
 			if(index < 0) {
 				index = 0;
-			} else if(index > heatMap.dataset.getColumnCount()) {
-				index = heatMap.dataset.getColumnCount();
+			} else if(index > heatMap.data.getColumnCount()) {
+				index = heatMap.data.getColumnCount();
 			}
 
 			if(index > lastMouseEvent) {// when moving right
