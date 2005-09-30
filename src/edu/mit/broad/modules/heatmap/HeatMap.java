@@ -33,12 +33,7 @@ import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
 import javax.swing.plaf.UIResource;
 
-import org.genepattern.data.expr.ExpressionData;
 import org.genepattern.data.expr.IExpressionData;
-import org.genepattern.data.matrix.DoubleMatrix2D;
-import org.genepattern.io.expr.ExpressionDataCreator;
-import org.genepattern.io.expr.IExpressionDataReader;
-import org.genepattern.module.AnalysisUtil;
 
 import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.JPEGEncodeParam;
@@ -193,7 +188,7 @@ public class HeatMap extends JPanel {
 		System.exit(1);
 	}
 
-	private static Color createColor(String triplet) {
+	static Color createColor(String triplet) {
 		String[] rgb = triplet.split(":");
 		if (rgb.length != 3) {
 			exit("Invalid rgb triplet " + triplet);
@@ -217,7 +212,7 @@ public class HeatMap extends JPanel {
 		return new Color(r, g, b);
 	}
 
-	private static Color[] parseColorMap(String fileName) {
+	static Color[] parseColorMap(String fileName) {
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader(new FileReader(fileName));
@@ -388,79 +383,6 @@ public class HeatMap extends JPanel {
 						+ ioe.getMessage());
 			}
 		}
-	}
-
-	/**
-	 * Create a heatmap image from the command line <input.filename>
-	 * <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
-	 * <normalization> -grid <grid> -ra <show.row.descriptions> -p
-	 * <show.row.ids>
-	 * 
-	 * @param args
-	 *            The command line arguments
-	 */
-	public static void main(String[] args) {
-		String inputFileName = args[0];
-		String outputFileName = args[1];
-		String outputFileFormat = args[2];
-
-		IExpressionDataReader reader = AnalysisUtil
-				.getExpressionReader(inputFileName);
-
-		ExpressionData data = (ExpressionData) AnalysisUtil.readExpressionData(
-				reader, inputFileName, new ExpressionDataCreator());
-
-		int columnWidth = 10;
-		int rowWidth = 10;
-		String normalization = "row normalized";
-		Color gridLinesColor = Color.black;
-		boolean showGridLines = false;
-		boolean showGeneAnnotations = false;
-		boolean showGeneNames = true;
-		java.util.List featureList = null;
-		Color highlightColor = Color.red;
-		Color[] colorMap = null;
-		for (int i = 3; i < args.length; i++) { // 0th arg is input file name,
-			// 1st arg is output file name,
-			// 2nd arg is format
-			String arg = args[i].substring(0, 2);
-			String value = args[i].substring(2, args[i].length());
-			if (value.equals("")) {
-				continue;
-			}
-
-			if (arg.equals("-c")) {
-				columnWidth = Integer.parseInt(value);
-			} else if (arg.equals("-r")) {
-				rowWidth = Integer.parseInt(value);
-			} else if (arg.equals("-n")) {
-				normalization = value;
-				if (!normalization.equals("global")
-						&& !normalization.equals("row normalized")) {
-					exit("Invalid normalization");
-				}
-			} else if (arg.equals("-g")) {
-				showGridLines = "yes".equalsIgnoreCase(value);
-			} else if (arg.equals("-l")) {
-				// r:g:b triplet
-				gridLinesColor = createColor(value);
-			} else if (arg.equals("-a")) {
-				showGeneAnnotations = "yes".equalsIgnoreCase(value);
-			} else if (arg.equals("-s")) {
-				showGeneNames = "yes".equalsIgnoreCase(value);
-			} else if (arg.equals("-f")) {
-				featureList = AnalysisUtil.readFeatureList(value);
-			} else if (arg.equals("-h")) {
-				highlightColor = createColor(value);
-			} else if (arg.equals("-m")) {
-				colorMap = parseColorMap(value);
-			} else {
-				exit("unknown option " + arg);
-			}
-		}
-		Color[] _colorMap = colorMap != null ? colorMap : RowColorConverter
-				.getDefaultColorMap();
-
 	}
 
 	/**
