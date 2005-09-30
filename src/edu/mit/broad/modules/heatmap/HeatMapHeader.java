@@ -1,49 +1,52 @@
 package edu.mit.broad.modules.heatmap;
-import java.awt.*;
+
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.awt.event.*;
-import java.awt.image.BufferedImage;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import org.genepattern.data.matrix.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 
+import javax.swing.JPanel;
 
 /**
- *  This class is used to render header of an experiment.
- *
- * @author     Aleksey D.Rezantsev
- * @author     Joshua Gould
- * @created    March 10, 2004
- * @version    1.0
+ * This class is used to render header of an experiment.
+ * 
+ * @author Aleksey D.Rezantsev
+ * @author Joshua Gould
+ * @created March 10, 2004
+ * @version 1.0
  */
 public class HeatMapHeader extends JPanel implements ClassVectorListener {
-
 
 	HeatMap heatMap;
 
 	private final static int IMAGE_HEIGHT = 15;
-	/**  The space between the heatmap and the sample names */
+
+	/** The space between the heatmap and the sample names */
 	private final static int COLOR_BAR_HEIGHT = 10;
+
 	private Insets insets = new Insets(0, 10, 0, 0);
+
 	private boolean drawColorBar = false;
 
 	boolean drawSampleNames = true;
 
 	private MouseListener mouseListener = new MouseListener();
-	Font font;
-	
-	int height = 0;
-	
-	/**  used for drawing */
-	private int fHeight = 0;
 
+	Font font;
+
+	int height = 0;
+
+	/** used for drawing */
+	private int fHeight = 0;
 
 	public HeatMapHeader(HeatMap heatMap) {
 		this.heatMap = heatMap;
@@ -52,40 +55,43 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		addMouseMotionListener(mouseListener);
 	}
 
-
 	public void classVectorChanged(java.util.EventObject event) {
 		updateSize(heatMap.contentWidth, heatMap.elementSize.width);
 		repaint();
 	}
 
-
 	public void updateSize(int contentWidth, int elementWidth) {
 		Graphics2D g2 = (Graphics2D) getGraphics();
-		if(g2!=null) {
+		if (g2 != null) {
 			updateSize(contentWidth, elementWidth, g2);
 			g2.dispose();
 		}
 	}
-	
+
 	/**
-	 *  Updates size of this header.
-	 *
-	 * @param  contentWidth  Description of the Parameter
-	 * @param  elementWidth  Description of the Parameter
+	 * Updates size of this header.
+	 * 
+	 * @param contentWidth
+	 *            Description of the Parameter
+	 * @param elementWidth
+	 *            Description of the Parameter
 	 */
 	public void updateSize(int contentWidth, int elementWidth, Graphics2D g) {
 		setElementWidth(elementWidth);
-		if(heatMap.antiAliasing) {
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		if (heatMap.antiAliasing) {
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_OFF);
+			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+					RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		}
 		FontMetrics hfm = g.getFontMetrics();
 		int maxHeight = 0;
 
 		final int size = heatMap.data.getColumnCount();
-		if(drawSampleNames) {
-			for(int feature = 0; feature < size; feature++) {
-				String name = heatMap.data.getColumnName(heatMap.getColumn(feature));
+		if (drawSampleNames) {
+			for (int feature = 0; feature < size; feature++) {
+				String name = heatMap.data.getColumnName(heatMap
+						.getColumn(feature));
 				maxHeight = Math.max(maxHeight, hfm.stringWidth(name));
 			}
 		}
@@ -96,11 +102,11 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		height = maxHeight;
 	}
 
-
 	/**
-	 *  Paints the header into specified graphics.
-	 *
-	 * @param  g  Description of the Parameter
+	 * Paints the header into specified graphics.
+	 * 
+	 * @param g
+	 *            Description of the Parameter
 	 */
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -109,30 +115,29 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 
 	}
 
-
 	/**
-	 *  Sets the left margin for the header
-	 *
-	 * @param  leftMargin  The new leftInset value
+	 * Sets the left margin for the header
+	 * 
+	 * @param leftMargin
+	 *            The new leftInset value
 	 */
 	public void setLeftInset(int leftMargin) {
 		insets.left = leftMargin;
 	}
 
-
 	void draw(Graphics2D g2) {
-		if(heatMap.antiAliasing) {
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		if (heatMap.antiAliasing) {
+			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_OFF);
+			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+					RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		}
 		drawHeader(g2);
 	}
 
-
 	void setDrawColorBar(boolean b) {
 		drawColorBar = b;
 	}
-
 
 	int getSelectedColumnCount() {
 		return mouseListener.lastIndex - mouseListener.firstIndex;
@@ -141,9 +146,9 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 	void setShowSampleNames(boolean b) {
 		drawSampleNames = b;
 	}
-	
+
 	boolean isShowingSampleNames() {
-		return drawSampleNames;	
+		return drawSampleNames;
 	}
 
 	int getSelectedColumn() {
@@ -151,21 +156,23 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		return mouseListener.firstIndex;
 	}
 
-
 	/**
-	 *  Draws the header into specified graphics.
-	 *
-	 * @param  g  Description of the Parameter
+	 * Draws the header into specified graphics.
+	 * 
+	 * @param g
+	 *            Description of the Parameter
 	 */
 	private void drawHeader(Graphics2D g) {
 		final int samples = heatMap.data.getColumnCount();
-		if(samples == 0) {
+		if (samples == 0) {
 			return;
 		}
 		int width = samples * heatMap.elementSize.width;
-		if(drawColorBar) {
-		//	g.drawImage(heatMap.negColorImage, insets.left, 0, (int) (width / 2f), IMAGE_HEIGHT, null);
-		//	g.drawImage(heatMap.posColorImage, (int) ((width) / 2f + insets.left), 0, (int) (width / 2.0), IMAGE_HEIGHT, null);
+		if (drawColorBar) {
+			// g.drawImage(heatMap.negColorImage, insets.left, 0, (int) (width /
+			// 2f), IMAGE_HEIGHT, null);
+			// g.drawImage(heatMap.posColorImage, (int) ((width) / 2f +
+			// insets.left), 0, (int) (width / 2.0), IMAGE_HEIGHT, null);
 		}
 		FontMetrics hfm = g.getFontMetrics();
 		int descent = hfm.getDescent();
@@ -174,20 +181,23 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		g.setColor(Color.black);
 
 		int textWidth;
-		if(drawColorBar) {
-			g.drawString(String.valueOf(heatMap.minValue), insets.left, IMAGE_HEIGHT + fHeight);
+		if (drawColorBar) {
+			g.drawString(String.valueOf(heatMap.minValue), insets.left,
+					IMAGE_HEIGHT + fHeight);
 			textWidth = hfm.stringWidth("1:1");
-			g.drawString("1:1", (int) (width / 2f) - textWidth / 2 + insets.left, IMAGE_HEIGHT + fHeight);
+			g.drawString("1:1", (int) (width / 2f) - textWidth / 2
+					+ insets.left, IMAGE_HEIGHT + fHeight);
 			textWidth = hfm.stringWidth(String.valueOf(heatMap.maxValue));
-			g.drawString(String.valueOf(heatMap.maxValue), width - textWidth + insets.left, IMAGE_HEIGHT + fHeight);
+			g.drawString(String.valueOf(heatMap.maxValue), width - textWidth
+					+ insets.left, IMAGE_HEIGHT + fHeight);
 		}
 
 		int h = -getSize().height + 8;
-		if(this.getColorBarHeight() > 0) {
+		if (this.getColorBarHeight() > 0) {
 			h += COLOR_BAR_HEIGHT;
 		}
 
-		if(drawSampleNames && mouseListener.firstIndex >= 0) {
+		if (drawSampleNames && mouseListener.firstIndex >= 0) {
 			g.setColor(Color.yellow);
 			Composite oldComposite = g.getComposite();
 			g.setComposite(HeatMap.SRC_OVER_COMPOSITE);
@@ -195,11 +205,11 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			int xend = heatMap.elementSize.width * mouseListener.lastIndex;
 
 			int top = 0;
-			if(drawColorBar) {
+			if (drawColorBar) {
 				top = top + IMAGE_HEIGHT + fHeight;
 			}
 			int bottom = getHeight();
-			if(heatMap.sampleClassVector.hasNonDefaultLabels()) {
+			if (heatMap.sampleClassVector.hasNonDefaultLabels()) {
 				bottom -= COLOR_BAR_HEIGHT;
 			}
 
@@ -211,37 +221,44 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		Rectangle bounds = g.getClipBounds();
 		int left = 0;
 		int right = samples;
-		if(bounds != null) {
+		if (bounds != null) {
 			left = heatMap.getLeftIndex(bounds.x);
 			right = heatMap.getRightIndex(bounds.x + bounds.width, samples);
 		}
 
 		Graphics2D g2 = (Graphics2D) g;
 
-		if(drawSampleNames) {
+		if (drawSampleNames) {
 			g.rotate(-Math.PI / 2);
-			for(int sample = left; sample < right; sample++) {
-				String name = heatMap.data.getColumnName(heatMap.samplesOrder[sample]);
-				//g.drawString(name, h, hfm.getAscent() + heatMap.elementSize.width * sample + heatMap.elementSize.width / 2 + insets.left);
-				g.drawString(name, h, hfm.getAscent() + heatMap.elementSize.width * sample + insets.left);
+			for (int sample = left; sample < right; sample++) {
+				String name = heatMap.data
+						.getColumnName(heatMap.samplesOrder[sample]);
+				// g.drawString(name, h, hfm.getAscent() +
+				// heatMap.elementSize.width * sample +
+				// heatMap.elementSize.width / 2 + insets.left);
+				g.drawString(name, h, hfm.getAscent()
+						+ heatMap.elementSize.width * sample + insets.left);
 			}
 			g.rotate(Math.PI / 2);
 		}
 
-		if(heatMap.sampleClassVector.hasNonDefaultLabels()) {
-			for(int sample = left; sample < right; sample++) {
-				Color c = heatMap.sampleClassVector.getColorForIndex(heatMap.samplesOrder[sample]);
+		if (heatMap.sampleClassVector.hasNonDefaultLabels()) {
+			for (int sample = left; sample < right; sample++) {
+				Color c = heatMap.sampleClassVector
+						.getColorForIndex(heatMap.samplesOrder[sample]);
 				g.setColor(c);
-				g.fillRect(sample * heatMap.elementSize.width + insets.left, getSize().height - COLOR_BAR_HEIGHT - 2, heatMap.elementSize.width, COLOR_BAR_HEIGHT);
+				g.fillRect(sample * heatMap.elementSize.width + insets.left,
+						getSize().height - COLOR_BAR_HEIGHT - 2,
+						heatMap.elementSize.width, COLOR_BAR_HEIGHT);
 			}
 		}
 	}
 
-
 	/**
-	 *  Sets an element width.
-	 *
-	 * @param  width  The new heatMap.elementSize.width value
+	 * Sets an element width.
+	 * 
+	 * @param width
+	 *            The new heatMap.elementSize.width value
 	 */
 	private void setElementWidth(int width) {
 		width = Math.min(width, 14);
@@ -249,38 +266,36 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		setFont(font);
 	}
 
-
 	/**
-	 *  Returns height of color bar for experiments
-	 *
-	 * @return    The colorBarHeight value
+	 * Returns height of color bar for experiments
+	 * 
+	 * @return The colorBarHeight value
 	 */
 	private int getColorBarHeight() {
 		/*
-		    for(int sample = 0; sample < heatMap.samplesOrder.length; sample++) {
-		    FIXME	//if(data.getExperimentColor(experiment.getSampleIndex(heatMap.samplesOrder[sample])) != null) {
-		    return COLOR_BAR_HEIGHT;
-		    }
-		    }
-		  */
-		if(!heatMap.sampleClassVector.hasNonDefaultLabels()) {
+		 * for(int sample = 0; sample < heatMap.samplesOrder.length; sample++) {
+		 * FIXME
+		 * //if(data.getExperimentColor(experiment.getSampleIndex(heatMap.samplesOrder[sample])) !=
+		 * null) { return COLOR_BAR_HEIGHT; } }
+		 */
+		if (!heatMap.sampleClassVector.hasNonDefaultLabels()) {
 			return 0;
 		} else {
 			return COLOR_BAR_HEIGHT;
 		}
 	}
 
-
 	class MouseListener extends MouseAdapter implements MouseMotionListener {
-		/**  left-most selected sample index */
+		/** left-most selected sample index */
 		int firstIndex = -1;
-		/**  right-most selected sample index */
+
+		/** right-most selected sample index */
 		int lastIndex = -1;
+
 		int lastMouseEvent = -1;
 
-
-		public void mouseMoved(MouseEvent e) { }
-
+		public void mouseMoved(MouseEvent e) {
+		}
 
 		public void mousePressed(MouseEvent e) {// start of selection
 
@@ -289,10 +304,10 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			// if click on 0th cell, left = 0 and right = 1
 			lastIndex = firstIndex + 1;
 
-			if(firstIndex < 0 || lastIndex > heatMap.data.getColumnCount()) {
+			if (firstIndex < 0 || lastIndex > heatMap.data.getColumnCount()) {
 				firstIndex = -1;
 				lastIndex = -1;
-			} else if(!yIsInRange(e)) {
+			} else if (!yIsInRange(e)) {
 				firstIndex = -1;
 				lastIndex = -1;
 			}
@@ -301,34 +316,35 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			repaint();
 		}
 
-
 		public void mouseDragged(MouseEvent e) {
 			int index = heatMap.findColumn(e.getX());
-			if(index < 0) {
+			if (index < 0) {
 				index = 0;
-			} else if(index > heatMap.data.getColumnCount()) {
+			} else if (index > heatMap.data.getColumnCount()) {
 				index = heatMap.data.getColumnCount();
 			}
 
-			if(index > lastMouseEvent) {// when moving right
-				if(lastMouseEvent < lastIndex && index >= lastIndex) { //crossover
+			if (index > lastMouseEvent) {// when moving right
+				if (lastMouseEvent < lastIndex && index >= lastIndex) { // crossover
 					firstIndex = lastIndex - 1;
 					lastIndex = index;
 					System.out.println("C");
-				} else if(index >= lastIndex) {
+				} else if (index >= lastIndex) {
 					lastIndex = index;
-					System.out.println("firstIndex " + firstIndex + " lastIndex " + lastIndex);
+					System.out.println("firstIndex " + firstIndex
+							+ " lastIndex " + lastIndex);
 				} else {
 					System.out.println("B");
 					firstIndex = index;
 				}
-			} // when moving left, update first index if click < first index, else update last index
+			} // when moving left, update first index if click < first index,
+				// else update last index
 			else {
-				if(lastMouseEvent > firstIndex && index <= firstIndex) {
-					//crossover
+				if (lastMouseEvent > firstIndex && index <= firstIndex) {
+					// crossover
 					lastIndex = firstIndex + 1;
 					firstIndex = index;
-				} else if(index <= firstIndex) {
+				} else if (index <= firstIndex) {
 					firstIndex = index;
 				} else {
 					lastIndex = index;
@@ -339,14 +355,13 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			repaint();
 		}
 
-
 		boolean yIsInRange(MouseEvent e) {
 			int top = 0;
-			if(drawColorBar) {
+			if (drawColorBar) {
 				top = top + IMAGE_HEIGHT + fHeight;
 			}
 			int bottom = getHeight();
-			if(getColorBarHeight() > 0) {
+			if (getColorBarHeight() > 0) {
 				bottom -= COLOR_BAR_HEIGHT;
 			}
 			return (e.getY() <= bottom && e.getY() >= top);
@@ -355,4 +370,3 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 	}
 
 }
-
