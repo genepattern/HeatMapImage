@@ -274,18 +274,33 @@ public class HeatMap extends JPanel {
 			int normalization, boolean drawGrid, Color gridLinesColor,
 			boolean drawRowNames, boolean drawRowDescriptions,
 			List featureList, Color featureListColor) {
+		createImage(data, outputFileName, outputFileFormat, columnSize,
+				rowSize, normalization, drawGrid, gridLinesColor, drawRowNames,
+				drawRowDescriptions, new List[]{featureList}, new Color[]{featureListColor});
+	}
+
+	public static void createImage(IExpressionData data, String outputFileName,
+			String outputFileFormat, int columnSize, int rowSize,
+			int normalization, boolean drawGrid, Color gridLinesColor,
+			boolean drawRowNames, boolean drawRowDescriptions,
+			List[] featureLists, Color[] featureListColors) {
 		HeatMap heatMap = new HeatMap(data, RowColorConverter
 				.getDefaultColorMap());
 
-		if (featureList != null) {
+		if (featureLists != null) {
 			heatMap.rowColorAnnotations = new Color[data.getRowCount()];
-			for (int i = 0; i < featureList.size(); i++) {
-				String feature = (String) featureList.get(i);
-				int index = data.getRowIndex(feature);
-				if (index < 0) {
-					System.out.println(feature + " not found in feature list.");
-				} else {
-					heatMap.rowColorAnnotations[index] = featureListColor;
+			for (int j = 0; j < featureLists.length; j++) {
+				List featureList = featureLists[j];
+				Color featureListColor = featureListColors[j];
+				for (int i = 0; i < featureList.size(); i++) {
+					String feature = (String) featureList.get(i);
+					int index = data.getRowIndex(feature);
+					if (index < 0) {
+						System.out.println(feature
+								+ " not found in feature list.");
+					} else {
+						heatMap.rowColorAnnotations[index] = featureListColor;
+					}
 				}
 			}
 		}
