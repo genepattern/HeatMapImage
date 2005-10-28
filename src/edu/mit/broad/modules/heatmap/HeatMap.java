@@ -60,8 +60,6 @@ public class HeatMap extends JPanel {
 
 	IExpressionData data;
 
-	MyClassVector sampleClassVector;
-
 	/** max value in the data */
 	double maxValue = -Double.MAX_VALUE;
 
@@ -135,6 +133,8 @@ public class HeatMap extends JPanel {
 	/** if not null, draw a filled square to the left of the row name */
 	Color[] rowColorAnnotations;
 
+	Color[] sampleColorAnnotations;
+
 	public HeatMap(IExpressionData data2, Color[] colorMap) {
 		this(data2, null, null, colorMap);
 	}
@@ -161,15 +161,11 @@ public class HeatMap extends JPanel {
 			}
 		}
 
-		this.sampleClassVector = new MyClassVector(data.getColumnCount());
-		sampleClassVector.setColor(sampleClassVector.getClassName(0),
-				Color.black);
 		this.genesOrder = genesOrder == null ? createDefaultOrdering(data
 				.getRowCount()) : genesOrder;
 		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(data
 				.getColumnCount()) : samplesOrder;
 		this.header = new HeatMapHeader(this);
-		sampleClassVector.addClassVectorListener(header);
 		setBackground(Color.white);
 		Listener listener = new Listener();
 		addMouseListener(listener);
@@ -276,14 +272,16 @@ public class HeatMap extends JPanel {
 			List featureList, Color featureListColor) {
 		createImage(data, outputFileName, outputFileFormat, columnSize,
 				rowSize, normalization, drawGrid, gridLinesColor, drawRowNames,
-				drawRowDescriptions, new List[]{featureList}, new Color[]{featureListColor});
+				drawRowDescriptions, new List[] { featureList },
+				new Color[] { featureListColor }, null, null);
 	}
 
 	public static void createImage(IExpressionData data, String outputFileName,
 			String outputFileFormat, int columnSize, int rowSize,
 			int normalization, boolean drawGrid, Color gridLinesColor,
 			boolean drawRowNames, boolean drawRowDescriptions,
-			List[] featureLists, Color[] featureListColors) {
+			List[] featureLists, Color[] featureListColors, List[] sampleLists,
+			Color[] sampleListColors) {
 		HeatMap heatMap = new HeatMap(data, RowColorConverter
 				.getDefaultColorMap());
 
@@ -300,6 +298,24 @@ public class HeatMap extends JPanel {
 								+ " not found in feature list.");
 					} else {
 						heatMap.rowColorAnnotations[index] = featureListColor;
+					}
+				}
+			}
+		}
+
+		if (sampleLists != null) {
+			heatMap.sampleColorAnnotations = new Color[data.getColumnCount()];
+			for (int j = 0; j < sampleLists.length; j++) {
+				List sampleList = sampleLists[j];
+				Color sampleListColor = sampleListColors[j];
+				for (int i = 0; i < sampleList.size(); i++) {
+					String sample = (String) sampleList.get(i);
+					int index = data.getColumnIndex(sample);
+					if (index < 0) {
+						System.out.println(sample
+								+ " not found in sample list.");
+					} else {
+						heatMap.sampleColorAnnotations[index] = sampleListColor;
 					}
 				}
 			}
@@ -581,10 +597,6 @@ public class HeatMap extends JPanel {
 
 	public void resetGenesOrder() {
 		genesOrder = createDefaultOrdering(data.getRowCount());
-	}
-
-	public void sortSamplesByColor() {
-		sortByClass(sampleClassVector, samplesOrder);
 	}
 
 	public void sortGenesByColor() {
@@ -909,17 +921,6 @@ public class HeatMap extends JPanel {
 		updateSizeAndRepaint();
 	}
 
-	public void setSampleClassVector(MyClassVector cv) {
-		ClassVectorListener[] listeners = sampleClassVector.getListeners();
-		sampleClassVector = cv;
-		EventObject e = new EventObject(sampleClassVector);
-		for (int i = 0; i < listeners.length; i++) {
-			listeners[i].classVectorChanged(e);
-			sampleClassVector.addClassVectorListener(listeners[i]);
-		}
-
-	}
-
 	public void setGeneURL(String s) {
 		geneURL = s;
 	}
@@ -1023,10 +1024,6 @@ public class HeatMap extends JPanel {
 
 	public boolean isShowingToolTipText() {
 		return showToolTipText;
-	}
-
-	public MyClassVector getSampleClassVector() {
-		return sampleClassVector;
 	}
 
 	public boolean isShowingGeneNames() {

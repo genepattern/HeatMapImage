@@ -19,10 +19,7 @@ import javax.swing.JPanel;
 /**
  * This class is used to render header of an experiment.
  * 
- * @author Aleksey D.Rezantsev
  * @author Joshua Gould
- * @created March 10, 2004
- * @version 1.0
  */
 public class HeatMapHeader extends JPanel implements ClassVectorListener {
 
@@ -209,7 +206,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 				top = top + IMAGE_HEIGHT + fHeight;
 			}
 			int bottom = getHeight();
-			if (heatMap.sampleClassVector.hasNonDefaultLabels()) {
+			if (heatMap.sampleColorAnnotations != null) {
 				bottom -= COLOR_BAR_HEIGHT;
 			}
 
@@ -242,10 +239,9 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			g.rotate(Math.PI / 2);
 		}
 
-		if (heatMap.sampleClassVector.hasNonDefaultLabels()) {
+		if (heatMap.sampleColorAnnotations != null) {
 			for (int sample = left; sample < right; sample++) {
-				Color c = heatMap.sampleClassVector
-						.getColorForIndex(heatMap.samplesOrder[sample]);
+				Color c = heatMap.sampleColorAnnotations[heatMap.samplesOrder[sample]];
 				g.setColor(c);
 				g.fillRect(sample * heatMap.elementSize.width + insets.left,
 						getSize().height - COLOR_BAR_HEIGHT - 2,
@@ -278,11 +274,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		 * //if(data.getExperimentColor(experiment.getSampleIndex(heatMap.samplesOrder[sample])) !=
 		 * null) { return COLOR_BAR_HEIGHT; } }
 		 */
-		if (!heatMap.sampleClassVector.hasNonDefaultLabels()) {
-			return 0;
-		} else {
-			return COLOR_BAR_HEIGHT;
-		}
+		return heatMap.sampleColorAnnotations != null ? COLOR_BAR_HEIGHT : 0;
 	}
 
 	class MouseListener extends MouseAdapter implements MouseMotionListener {
@@ -338,7 +330,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 					firstIndex = index;
 				}
 			} // when moving left, update first index if click < first index,
-				// else update last index
+			// else update last index
 			else {
 				if (lastMouseEvent > firstIndex && index <= firstIndex) {
 					// crossover
