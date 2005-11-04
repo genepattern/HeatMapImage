@@ -270,10 +270,17 @@ public class HeatMap extends JPanel {
 			int normalization, boolean drawGrid, Color gridLinesColor,
 			boolean drawRowNames, boolean drawRowDescriptions,
 			List featureList, Color featureListColor) throws IOException {
-		createImage(data, outputFileName, outputFileFormat, columnSize,
-				rowSize, normalization, drawGrid, gridLinesColor, drawRowNames,
-				drawRowDescriptions, new List[] { featureList },
-				new Color[] { featureListColor }, null, null);
+		if (featureList != null) {
+			createImage(data, outputFileName, outputFileFormat, columnSize,
+					rowSize, normalization, drawGrid, gridLinesColor,
+					drawRowNames, drawRowDescriptions,
+					new List[] { featureList },
+					new Color[] { featureListColor }, null, null);
+		} else {
+			createImage(data, outputFileName, outputFileFormat, columnSize,
+					rowSize, normalization, drawGrid, gridLinesColor,
+					drawRowNames, drawRowDescriptions, null, null, null, null);
+		}
 	}
 
 	public static void createImage(IExpressionData data, String outputFileName,
