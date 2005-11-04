@@ -1,6 +1,7 @@
 package edu.mit.broad.modules.heatmap;
 
 import java.awt.Color;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -38,8 +39,12 @@ public class ExampleUsage {
 		List featureList = Arrays.asList(new String[] {"M31303_rna1_at", "Y08612_at", "L49229_f_at", "U20998_at", "U29175_at", "M91432_at", "X15949_at"});
 		Color featureListColor = Color.YELLOW;
 
-		HeatMap.createImage(data, outputFileName, outputFileFormat, columnSize,
-				rowSize, normalization, drawGrid, gridLinesColor, drawRowNames,
-				drawRowDescriptions, featureList, featureListColor);
+		try {
+			HeatMap.createImage(data, outputFileName, outputFileFormat, columnSize,
+					rowSize, normalization, drawGrid, gridLinesColor, drawRowNames,
+					drawRowDescriptions, featureList, featureListColor);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

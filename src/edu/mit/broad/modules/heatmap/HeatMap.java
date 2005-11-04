@@ -179,31 +179,29 @@ public class HeatMap extends JPanel {
 		// addMouseMotionListener(geneMouseListener);
 	}
 
-	static void exit(String s) {
-		System.err.println(s);
-		System.exit(1);
-	}
-
 	static Color createColor(String triplet) {
 		String[] rgb = triplet.split(":");
 		if (rgb.length != 3) {
-			exit("Invalid rgb triplet " + triplet);
+			throw new IllegalArgumentException("Invalid rgb triplet " + triplet);
 		}
 		int r = 0, g = 0, b = 0;
 		try {
 			r = Integer.parseInt(rgb[0]);
 		} catch (NumberFormatException nfe) {
-			exit("Red component is not an integer " + triplet);
+			throw new IllegalArgumentException(
+					"Red component is not an integer " + triplet);
 		}
 		try {
 			g = Integer.parseInt(rgb[1]);
 		} catch (NumberFormatException nfe) {
-			exit("Green component is not an integer " + triplet);
+			throw new IllegalArgumentException(
+					"Green component is not an integer " + triplet);
 		}
 		try {
 			b = Integer.parseInt(rgb[2]);
 		} catch (NumberFormatException nfe) {
-			exit("Blue component is not an integer " + triplet);
+			throw new IllegalArgumentException(
+					"Blue component is not an integer " + triplet);
 		}
 		return new Color(r, g, b);
 	}
@@ -264,12 +262,14 @@ public class HeatMap extends JPanel {
 	 * @param featureListColor
 	 *            The color to highlight the features in the feature list when
 	 *            <tt>featureList</tt> is not <tt>null</tt>
+	 * @throws IllegalArgumentException
+	 * @throws IOException
 	 */
 	public static void createImage(IExpressionData data, String outputFileName,
 			String outputFileFormat, int columnSize, int rowSize,
 			int normalization, boolean drawGrid, Color gridLinesColor,
 			boolean drawRowNames, boolean drawRowDescriptions,
-			List featureList, Color featureListColor) {
+			List featureList, Color featureListColor) throws IOException {
 		createImage(data, outputFileName, outputFileFormat, columnSize,
 				rowSize, normalization, drawGrid, gridLinesColor, drawRowNames,
 				drawRowDescriptions, new List[] { featureList },
@@ -281,7 +281,7 @@ public class HeatMap extends JPanel {
 			int normalization, boolean drawGrid, Color gridLinesColor,
 			boolean drawRowNames, boolean drawRowDescriptions,
 			List[] featureLists, Color[] featureListColors, List[] sampleLists,
-			Color[] sampleListColors) {
+			Color[] sampleListColors) throws IOException {
 		HeatMap heatMap = new HeatMap(data, RowColorConverter
 				.getDefaultColorMap());
 
@@ -373,30 +373,27 @@ public class HeatMap extends JPanel {
 			}
 		}
 		if (!outputFileFormat.equals("eps")) {
-			try {
-				ImageEncodeParam fParam = null;
-				if (outputFileFormat.equals("jpeg")) {
-					JPEGEncodeParam jpegParam = new JPEGEncodeParam();
-					jpegParam.setQuality(1.0f);
-					fParam = jpegParam;
-				} else if (outputFileFormat.equals("png")) {
-					fParam = new com.sun.media.jai.codec.PNGEncodeParam.RGB();
-				} else if (outputFileFormat.equals("tiff")) {
-					com.sun.media.jai.codec.TIFFEncodeParam param = new com.sun.media.jai.codec.TIFFEncodeParam();
-					param
-							.setCompression(com.sun.media.jai.codec.TIFFEncodeParam.COMPRESSION_NONE);
-					fParam = param;
-				} else if (outputFileFormat.equals("bmp")) {
-					fParam = new com.sun.media.jai.codec.BMPEncodeParam();
-				} else {
-					exit("Unknown output file format");
-				}
-				JAI.create("filestore", heatMap.snapshot(), outputFileName,
-						outputFileFormat, fParam);
-			} catch (Exception ioe) {
-				exit("An error occurred while saving the image.\nCause: "
-						+ ioe.getMessage());
+
+			ImageEncodeParam fParam = null;
+			if (outputFileFormat.equals("jpeg")) {
+				JPEGEncodeParam jpegParam = new JPEGEncodeParam();
+				jpegParam.setQuality(1.0f);
+				fParam = jpegParam;
+			} else if (outputFileFormat.equals("png")) {
+				fParam = new com.sun.media.jai.codec.PNGEncodeParam.RGB();
+			} else if (outputFileFormat.equals("tiff")) {
+				com.sun.media.jai.codec.TIFFEncodeParam param = new com.sun.media.jai.codec.TIFFEncodeParam();
+				param
+						.setCompression(com.sun.media.jai.codec.TIFFEncodeParam.COMPRESSION_NONE);
+				fParam = param;
+			} else if (outputFileFormat.equals("bmp")) {
+				fParam = new com.sun.media.jai.codec.BMPEncodeParam();
+			} else {
+				throw new IllegalArgumentException("Unknown output file format");
 			}
+			JAI.create("filestore", heatMap.snapshot(), outputFileName,
+					outputFileFormat, fParam);
+
 		} else {
 			epsGraphics.setFont(heatMap.header.font);
 			heatMap.header.draw(epsGraphics);
@@ -409,9 +406,10 @@ public class HeatMap extends JPanel {
 						new java.io.FileWriter(outputFileName));
 				pw.print(output);
 				pw.close();
-			} catch (java.io.IOException ioe) {
-				exit("An error occurred while saving the postscript file.\nCause: "
-						+ ioe.getMessage());
+			} catch (IOException ioe) {
+				throw new IOException(
+						"An error occurred while saving the postscript file.\nCause: "
+								+ ioe.getMessage());
 			}
 		}
 	}

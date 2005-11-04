@@ -1,6 +1,7 @@
 package edu.mit.broad.modules.heatmap;
 
 import java.awt.Color;
+import java.io.IOException;
 
 import org.genepattern.data.expr.IExpressionData;
 import org.genepattern.io.expr.IExpressionDataReader;
@@ -74,15 +75,19 @@ public class RunHeatMapImage {
 			} else if (arg.equals("-m")) {
 				colorMap = HeatMap.parseColorMap(value);
 			} else {
-				HeatMap.exit("unknown option " + arg);
+				AnalysisUtil.exit("unknown option " + arg);
 			}
 		}
 		Color[] _colorMap = colorMap != null ? colorMap : RowColorConverter
 				.getDefaultColorMap();
-		HeatMap.createImage(data, outputFileName, outputFileFormat,
-				columnWidth, rowWidth, normalization, showGridLines,
-				gridLinesColor, showGeneNames, showGeneAnnotations,
-				featureList, highlightColor);
+		try {
+			HeatMap.createImage(data, outputFileName, outputFileFormat,
+					columnWidth, rowWidth, normalization, showGridLines,
+					gridLinesColor, showGeneNames, showGeneAnnotations,
+					featureList, highlightColor);
+		} catch (Exception e) {
+			AnalysisUtil.exit(e.getMessage());
+		}
 
 	}
 
