@@ -86,7 +86,13 @@ public class RunHeatMapImage {
 					gridLinesColor, showGeneNames, showGeneAnnotations,
 					featureList, highlightColor);
 		} catch (Exception e) {
-			AnalysisUtil.exit(e.getMessage());
+			if (e instanceof IOException || e instanceof RuntimeException) {
+				AnalysisUtil.exit(e.getMessage());
+			} else {
+				AnalysisUtil.exit("An error occurred while saving the image.");
+			}
+		} catch (OutOfMemoryError ome) {
+			AnalysisUtil.exit("Not enough memory available to save the image.");
 		}
 
 	}
