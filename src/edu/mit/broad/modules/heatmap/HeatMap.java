@@ -3,7 +3,6 @@ package edu.mit.broad.modules.heatmap;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -16,7 +15,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,15 +26,11 @@ import java.util.List;
 
 import javax.media.jai.JAI;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
-import javax.swing.plaf.UIResource;
 
 import org.genepattern.data.expr.IExpressionData;
+import org.jibble.epsgraphics.EpsGraphics2D;
 
 import com.sun.media.jai.codec.ImageEncodeParam;
 import com.sun.media.jai.codec.JPEGEncodeParam;
@@ -43,7 +40,7 @@ import com.sun.media.jai.codec.JPEGEncodeParam;
  * 
  * @author Joshua Gould
  */
-public class HeatMap extends JPanel {
+public class HeatMap {
 
 	public static int COLOR_RESPONSE_LOG = 0;
 
@@ -166,10 +163,7 @@ public class HeatMap extends JPanel {
 		this.samplesOrder = samplesOrder == null ? createDefaultOrdering(data
 				.getColumnCount()) : samplesOrder;
 		this.header = new HeatMapHeader(this);
-		setBackground(Color.white);
-		Listener listener = new Listener();
-		addMouseListener(listener);
-		addMouseMotionListener(listener);
+
 		rowColorConverter = new RowColorConverter(colorMap,
 				COLOR_RESPONSE_LINEAR, data);
 		setNormalization(NORMALIZATION_ROW);
@@ -338,24 +332,6 @@ public class HeatMap extends JPanel {
 		if (normalization == NORMALIZATION_GLOBAL) { // default is row
 			heatMap.setNormalization(HeatMap.NORMALIZATION_GLOBAL);
 		}
-		Graphics2D epsGraphics = null;
-		if (outputFileFormat.equals("eps")) {
-			epsGraphics = new org.jibble.epsgraphics.EpsGraphics2D();
-			// epsGraphics.scale(0.24, 0.24); // Set resolution to 300 dpi (0.24
-			// = 72/300)
-
-			heatMap.updateSize(epsGraphics);
-			heatMap.header.updateSize(heatMap.contentWidth,
-					heatMap.elementSize.width, epsGraphics);
-		} else {
-			BufferedImage bi = new BufferedImage(100, 100,
-					BufferedImage.TYPE_3BYTE_BGR);
-			Graphics2D g2 = bi.createGraphics();
-			heatMap.updateSize(g2);
-			heatMap.header.updateSize(heatMap.contentWidth,
-					heatMap.elementSize.width, g2);
-			g2.dispose();
-		}
 		if (outputFileFormat.equals("jpeg")) {
 			if (!outputFileName.toLowerCase().endsWith(".jpg")
 					&& !outputFileName.toLowerCase().endsWith(".jpeg")) {
@@ -379,6 +355,31 @@ public class HeatMap extends JPanel {
 				outputFileName += ".eps";
 			}
 		}
+
+		Graphics2D epsGraphics = null;
+		if (outputFileFormat.equals("eps")) {
+			EpsGraphics2D temp = new EpsGraphics2D();
+			heatMap.updateSize(temp);
+			heatMap.header.updateSize(heatMap.contentWidth,
+					heatMap.elementSize.width, temp);
+			temp.dispose();
+			epsGraphics = new EpsGraphics2D();
+			// epsGraphics = new EpsGraphics2D("", new BufferedOutputStream(
+			// new FileOutputStream(outputFileName)), 0, 0,
+			// heatMap.contentWidth, heatMap.height
+			// + heatMap.header.height);
+			// epsGraphics.scale(0.24, 0.24); // Set resolution to 300 dpi (0.24
+			// = 72/300)
+		} else {
+			BufferedImage bi = new BufferedImage(100, 100,
+					BufferedImage.TYPE_3BYTE_BGR);
+			Graphics2D g2 = bi.createGraphics();
+			heatMap.updateSize(g2);
+			heatMap.header.updateSize(heatMap.contentWidth,
+					heatMap.elementSize.width, g2);
+			g2.dispose();
+		}
+
 		if (!outputFileFormat.equals("eps")) {
 
 			ImageEncodeParam fParam = null;
@@ -398,6 +399,8 @@ public class HeatMap extends JPanel {
 			} else {
 				throw new IllegalArgumentException("Unknown output file format");
 			}
+			// ImageIO.write(heatMap.snapshot(), "jpeg", new
+			// File(outputFileName));
 			JAI.create("filestore", heatMap.snapshot(), outputFileName,
 					outputFileFormat, fParam);
 
@@ -407,6 +410,9 @@ public class HeatMap extends JPanel {
 			epsGraphics.translate(0, heatMap.header.height);
 			epsGraphics.setFont(heatMap.font);
 			heatMap.draw(epsGraphics);
+			// ((EpsGraphics2D) epsGraphics).flush();
+			// ((EpsGraphics2D) epsGraphics).close();
+
 			String output = epsGraphics.toString();
 			try {
 				java.io.PrintWriter pw = new java.io.PrintWriter(
@@ -418,6 +424,8 @@ public class HeatMap extends JPanel {
 						"An error occurred while saving the postscript file.\nCause: "
 								+ ioe.getMessage());
 			}
+			epsGraphics.dispose();
+
 		}
 	}
 
@@ -438,11 +446,10 @@ public class HeatMap extends JPanel {
 	 * @param g
 	 *            Description of the Parameter
 	 */
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		draw((Graphics2D) g);
-	}
-
+	// public void paintComponent(Graphics g) {
+	// super.paintComponent(g);
+	// draw((Graphics2D) g);
+	// }
 	private String getRowDescription(int row) {
 		return rowDescriptions[row];
 	}
@@ -576,26 +583,6 @@ public class HeatMap extends JPanel {
 		}
 	}
 
-	/**
-	 * Calls the <code>configureEnclosingScrollPane</code> method.
-	 * 
-	 * @see #configureEnclosingScrollPane
-	 */
-	public void addNotify() {
-		super.addNotify();
-		configureEnclosingScrollPane();
-	}
-
-	/**
-	 * Calls the <code>unconfigureEnclosingScrollPane</code> method.
-	 * 
-	 * @see #unconfigureEnclosingScrollPane
-	 */
-	public void removeNotify() {
-		unconfigureEnclosingScrollPane();
-		super.removeNotify();
-	}
-
 	public void resetSamplesOrder() {
 		samplesOrder = createDefaultOrdering(data.getColumnCount());
 	}
@@ -630,85 +617,14 @@ public class HeatMap extends JPanel {
 	}
 
 	/** Updates the size of this heatmap panel and the header */
-	public void updateSize() {
-		Graphics2D g = (Graphics2D) getGraphics();
-		if (g != null) {
-			updateSize(g);
-			g.dispose();
-		}
-		header.updateSize(contentWidth, elementSize.width);
-
-	}
-
-	/**
-	 * If this <code>HeatMap</code> is the <code>viewportView</code> of an
-	 * enclosing <code>JScrollPane</code> (the usual situation), configure
-	 * this <code>ScrollPane</code> by, amongst other things, installing the
-	 * heat map's <code>header</code> as the <code>columnHeaderView</code>
-	 * of the scroll pane. When a <code>HeatMap</code> is added to a
-	 * <code>JScrollPane</code> in the usual way, using
-	 * <code>new JScrollPane(myHeatMap)</code>, <code>addNotify</code> is
-	 * called in the <code>HeatMap</code> (when the heat map is added to the
-	 * viewport). <code>HeatMap</code>'s <code>addNotify</code> method in
-	 * turn calls this method, which is protected so that this default
-	 * installation procedure can be overridden by a subclass.
-	 * 
-	 * @see #addNotify
-	 */
-	protected void configureEnclosingScrollPane() {
-		Container p = getParent();
-		if (p instanceof JViewport) {
-			Container gp = p.getParent();
-			if (gp instanceof JScrollPane) {
-				JScrollPane scrollPane = (JScrollPane) gp;
-				// Make certain we are the viewPort's view and not, for
-				// example, the rowHeaderView of the scrollPane -
-				// an implementor of fixed columns might do this.
-				JViewport viewport = scrollPane.getViewport();
-				if (viewport == null || viewport.getView() != this) {
-					return;
-				}
-				scrollPane.setColumnHeaderView(header);
-				header.updateSize(contentWidth, elementSize.width);
-				// scrollPane.getViewport().setBackingStoreEnabled(true);
-				Border border = scrollPane.getBorder();
-				if (border == null || border instanceof UIResource) {
-					scrollPane.setBorder(UIManager
-							.getBorder("Table.scrollPaneBorder"));
-				}
-			}
-		}
-	}
-
-	/**
-	 * Reverses the effect of <code>configureEnclosingScrollPane</code> by
-	 * replacing the <code>columnHeaderView</code> of the enclosing scroll
-	 * pane with <code>null</code>. <code>HeatMap</code>'s
-	 * <code>removeNotify</code> method calls this method, which is protected
-	 * so that this default uninstallation procedure can be overridden by a
-	 * subclass.
-	 * 
-	 * @see #removeNotify
-	 * @see #configureEnclosingScrollPane
-	 */
-	protected void unconfigureEnclosingScrollPane() {
-		Container p = getParent();
-		if (p instanceof JViewport) {
-			Container gp = p.getParent();
-			if (gp instanceof JScrollPane) {
-				JScrollPane scrollPane = (JScrollPane) gp;
-				// Make certain we are the viewPort's view and not, for
-				// example, the rowHeaderView of the scrollPane -
-				// an implementor of fixed columns might do this.
-				JViewport viewport = scrollPane.getViewport();
-				if (viewport == null || viewport.getView() != this) {
-					return;
-				}
-				scrollPane.setColumnHeaderView(null);
-			}
-		}
-	}
-
+	// public void updateSize() {
+	// Graphics2D g = (Graphics2D) getGraphics();
+	// if (g != null) {
+	// updateSize(g);
+	// g.dispose();
+	// }
+	// header.updateSize(contentWidth, elementSize.width);
+	// }
 	static int[] createDefaultOrdering(int size) {
 		int[] order = new int[size];
 		for (int i = 0; i < order.length; i++) {
@@ -727,7 +643,7 @@ public class HeatMap extends JPanel {
 		int fontHeight = Math.min(14, elementSize.height);
 		font = new Font(fontFamilyName, fontStyle, fontHeight);
 		g.setFont(font);
-		setFont(font);
+		// setFont(font);
 		int width = elementSize.width * data.getColumnCount() + 1 + insets.left;
 		if (showGeneNames) {
 			this.geneNameWidth = getMaxGeneNamesWidth(g);
@@ -752,8 +668,8 @@ public class HeatMap extends JPanel {
 
 		this.contentWidth = width;
 		this.height = elementSize.height * data.getRowCount() + 1;
-		setSize(width, height);
-		setPreferredSize(new Dimension(width, height));
+		// setSize(width, height);
+		// setPreferredSize(new Dimension(width, height));
 	}
 
 	/**
@@ -866,9 +782,9 @@ public class HeatMap extends JPanel {
 	}
 
 	private void updateSizeAndRepaint() {
-		updateSize();
-		repaint();
-		header.repaint();
+		// updateSize();
+		// repaint();
+		// header.repaint();
 	}
 
 	private void sortByClass(MyClassVector cv, int[] order) {
@@ -937,7 +853,7 @@ public class HeatMap extends JPanel {
 	public void setElementSize(int width, int height) {
 		elementSize.width = width;
 		elementSize.height = height;
-		updateSize();
+		// updateSize();
 		notifyElementSizeChangedListeners(new ElementSizeChangedEvent(this,
 				width, height));
 	}
@@ -1183,7 +1099,7 @@ public class HeatMap extends JPanel {
 				topSelectedGeneIndex = -1;
 			}
 
-			repaint();
+			// repaint();
 		}
 
 		public void mouseDragged(MouseEvent e) {
@@ -1200,7 +1116,7 @@ public class HeatMap extends JPanel {
 				// this rectangle becomes visible
 				((JPanel) e.getSource()).scrollRectToVisible(r);
 			}
-			repaint();
+			// repaint();
 		}
 
 		private void updateMouse(MouseEvent e) {
@@ -1305,7 +1221,7 @@ public class HeatMap extends JPanel {
 			}
 			Graphics g = null;
 			if (isLegalPosition(row, column)) {
-				g = getGraphics(); // FIXME
+				// g = getGraphics(); // FIXME
 				drawRectAt(g, row, column, Color.white); // draw border
 				// framework.setStatusText("Gene: " +
 				// data.getUniqueId(getMultipleArrayDataRow(row)) + " Sample: "
@@ -1316,7 +1232,7 @@ public class HeatMap extends JPanel {
 				; // framework.setStatusText(oldStatusText);
 			}
 			if (isLegalPosition(oldRow, oldColumn)) {
-				g = g != null ? g : getGraphics(); // FIXME
+				// g = g != null ? g : getGraphics(); // FIXME
 				fillRectAt((Graphics2D) g, oldRow, oldColumn);
 			}
 			setOldPosition(row, column);
@@ -1331,7 +1247,7 @@ public class HeatMap extends JPanel {
 
 		public void mouseExited(MouseEvent event) {
 			if (isLegalPosition(oldRow, oldColumn)) {
-				Graphics g = getGraphics(); // FIXME
+				Graphics g = null; // getGraphics(); // FIXME
 				fillRectAt((Graphics2D) g, oldRow, oldColumn);
 				g.dispose();
 			}

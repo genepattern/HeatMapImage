@@ -21,7 +21,7 @@ import javax.swing.JPanel;
  * 
  * @author Joshua Gould
  */
-public class HeatMapHeader extends JPanel implements ClassVectorListener {
+public class HeatMapHeader  implements ClassVectorListener {
 
 	HeatMap heatMap;
 
@@ -45,25 +45,27 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 	/** used for drawing */
 	private int fHeight = 0;
 
+	private int width;
+
 	public HeatMapHeader(HeatMap heatMap) {
 		this.heatMap = heatMap;
-		setBackground(Color.white);
-		addMouseListener(mouseListener);
-		addMouseMotionListener(mouseListener);
+		//setBackground(Color.white);
+		//addMouseListener(mouseListener);
+		//addMouseMotionListener(mouseListener);
 	}
 
 	public void classVectorChanged(java.util.EventObject event) {
-		updateSize(heatMap.contentWidth, heatMap.elementSize.width);
-		repaint();
+		//updateSize(heatMap.contentWidth, heatMap.elementSize.width);
+		//repaint();
 	}
 
-	public void updateSize(int contentWidth, int elementWidth) {
-		Graphics2D g2 = (Graphics2D) getGraphics();
-		if (g2 != null) {
-			updateSize(contentWidth, elementWidth, g2);
-			g2.dispose();
-		}
-	}
+	//public void updateSize(int contentWidth, int elementWidth) {
+//		Graphics2D g2 = (Graphics2D) getGraphics();
+	//	if (g2 != null) {
+		//	updateSize(contentWidth, elementWidth, g2);
+		//	g2.dispose();
+	//	}
+//	}
 
 	/**
 	 * Updates size of this header.
@@ -94,23 +96,11 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 		}
 		maxHeight += IMAGE_HEIGHT + hfm.getHeight() + 10;
 		maxHeight += getColorBarHeight();
-		setSize(contentWidth, maxHeight);
-		setPreferredSize(new Dimension(contentWidth, maxHeight));
-		height = maxHeight;
+		this.width = contentWidth;
+		this.height = maxHeight;
 	}
 
-	/**
-	 * Paints the header into specified graphics.
-	 * 
-	 * @param g
-	 *            Description of the Parameter
-	 */
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		Graphics2D g2 = (Graphics2D) g;
-		draw(g2);
-
-	}
+	
 
 	/**
 	 * Sets the left margin for the header
@@ -189,7 +179,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 					+ insets.left, IMAGE_HEIGHT + fHeight);
 		}
 
-		int h = -getSize().height + 8;
+		int h = -height + 8;
 		if (this.getColorBarHeight() > 0) {
 			h += COLOR_BAR_HEIGHT;
 		}
@@ -205,7 +195,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			if (drawColorBar) {
 				top = top + IMAGE_HEIGHT + fHeight;
 			}
-			int bottom = getHeight();
+			int bottom = height;
 			if (heatMap.sampleColorAnnotations != null) {
 				bottom -= COLOR_BAR_HEIGHT;
 			}
@@ -244,7 +234,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 				Color c = heatMap.sampleColorAnnotations[heatMap.samplesOrder[sample]];
 				g.setColor(c);
 				g.fillRect(sample * heatMap.elementSize.width + insets.left,
-						getSize().height - COLOR_BAR_HEIGHT - 2,
+						height - COLOR_BAR_HEIGHT - 2,
 						heatMap.elementSize.width, COLOR_BAR_HEIGHT);
 			}
 		}
@@ -259,7 +249,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 	private void setElementWidth(int width) {
 		width = Math.min(width, 14);
 		font = new Font(heatMap.fontFamilyName, heatMap.fontStyle, width);
-		setFont(font);
+		//setFont(font);
 	}
 
 	/**
@@ -305,7 +295,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			}
 
 			lastMouseEvent = firstIndex;
-			repaint();
+			//repaint();
 		}
 
 		public void mouseDragged(MouseEvent e) {
@@ -344,7 +334,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			}
 
 			lastMouseEvent = index;
-			repaint();
+		//	repaint();
 		}
 
 		boolean yIsInRange(MouseEvent e) {
@@ -352,7 +342,7 @@ public class HeatMapHeader extends JPanel implements ClassVectorListener {
 			if (drawColorBar) {
 				top = top + IMAGE_HEIGHT + fHeight;
 			}
-			int bottom = getHeight();
+			int bottom = height;
 			if (getColorBarHeight() > 0) {
 				bottom -= COLOR_BAR_HEIGHT;
 			}
