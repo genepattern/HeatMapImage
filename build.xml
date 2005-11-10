@@ -7,7 +7,7 @@
 	
 	<target name="_init" depends="init">
 		<property name="appfile" value="HeatMap.jar"/>
-		<property name="inclds" value="edu/"/>
+		<property name="inclds" value="org/"/>
 		<patternset id="jar.files" includes="jai_codec.jar, jai_core.jar, broad-cg.jar, gp-modules.jar, Jama-1.0.1.jar, trove.jar, epsgraphics.jar"/>
 		<path id="library.classpath">
 			<fileset dir="${libpath}">
