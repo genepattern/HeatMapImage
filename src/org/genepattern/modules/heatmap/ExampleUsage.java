@@ -31,7 +31,7 @@ public class ExampleUsage {
 		int columnSize = 8;
 		int rowSize = 8;
 
-		int normalization = HeatMap.NORMALIZATION_ROW;
+		int normalization = HeatMap.COLOR_RESPONSE_ROW;
 		boolean drawGrid = true;
 		Color gridLinesColor = Color.black;
 

@@ -32,7 +32,7 @@ public class RunHeatMapImage {
 
 		int columnWidth = 10;
 		int rowWidth = 10;
-		int normalization = HeatMap.NORMALIZATION_ROW;
+		int normalization = HeatMap.COLOR_RESPONSE_ROW;
 		Color gridLinesColor = Color.black;
 		boolean showGridLines = false;
 		boolean showGeneAnnotations = false;
@@ -55,9 +55,9 @@ public class RunHeatMapImage {
 				rowWidth = Integer.parseInt(value);
 			} else if (arg.equals("-n")) {
 				if (value.equals("global")) {
-					normalization = HeatMap.NORMALIZATION_GLOBAL;
+					normalization = HeatMap.COLOR_RESPONSE_GLOBAL;
 				} else if (value.equals("row normalized")) {
-					normalization = HeatMap.NORMALIZATION_ROW;
+					normalization = HeatMap.COLOR_RESPONSE_ROW;
 				}
 
 			} else if (arg.equals("-g")) {
