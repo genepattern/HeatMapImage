@@ -2,11 +2,15 @@ package org.genepattern.modules.heatmap;
 
 import java.awt.Color;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.genepattern.data.expr.IExpressionData;
+import org.genepattern.heatmap.image.DisplaySettings;
+import org.genepattern.heatmap.image.HeatMap;
+import org.genepattern.heatmap.image.RowColorConverter;
 import org.genepattern.io.expr.IExpressionDataReader;
 import org.genepattern.module.AnalysisUtil;
-import org.genepattern.heatmap.image.*;
 
 public class RunHeatMapImage {
 
@@ -82,10 +86,26 @@ public class RunHeatMapImage {
 		Color[] _colorMap = colorMap != null ? colorMap : RowColorConverter
 				.getDefaultColorMap();
 		try {
-			HeatMap.createImage(data, outputFileName, outputFileFormat,
-					columnWidth, rowWidth, normalization, showGridLines,
-					gridLinesColor, showGeneNames, showGeneAnnotations,
-					featureList, highlightColor);
+			DisplaySettings ds = new DisplaySettings();
+			ds.columnSize = columnWidth;
+			ds.rowSize = rowWidth;
+			ds.colorScheme = normalization;
+			ds.drawGrid = showGridLines;
+			ds.drawRowNames = showGeneNames;
+			ds.drawRowDescriptions = showGeneAnnotations;
+			ds.gridLinesColor = gridLinesColor;
+
+			Map featureNames2Colors = null;
+			if (featureList != null) {
+				featureNames2Colors = new HashMap();
+				for (int i = 0; i < featureList.size(); i++) {
+					String name = (String) featureList.get(i);
+					featureNames2Colors.put(name, highlightColor);
+				}
+
+			}
+			HeatMap.saveImage(data, ds, null, featureNames2Colors,
+					outputFileName, outputFileFormat);
 		} catch (Exception e) {
 			if (e instanceof IOException || e instanceof RuntimeException) {
 				AnalysisUtil.exit(e.getMessage());
