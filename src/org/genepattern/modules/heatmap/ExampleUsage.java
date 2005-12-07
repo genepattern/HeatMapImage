@@ -1,52 +1,66 @@
 package org.genepattern.modules.heatmap;
 
 import java.awt.Color;
-import java.io.IOException;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.genepattern.data.expr.ExpressionData;
-import org.genepattern.data.expr.IExpressionData;
+import org.genepattern.heatmap.image.DisplaySettings;
+import org.genepattern.heatmap.image.FeatureAnnotator;
 import org.genepattern.heatmap.image.HeatMap;
-import org.genepattern.io.expr.ExpressionDataCreator;
 import org.genepattern.io.expr.IExpressionDataReader;
+import org.genepattern.ioutil.ImageUtil;
 import org.genepattern.module.AnalysisUtil;
 
 public class ExampleUsage {
 
 	/**
 	 * @param args
+	 * @throws Exception
 	 */
-	public static void main(String[] args) {
-		String inputFileName = "all_aml_train.neighbors.gct";
+	public static void main(String[] args) throws Exception {
+		String inputFileName = args[0];
 		IExpressionDataReader reader = AnalysisUtil
 				.getExpressionReader(inputFileName);
 
-		ExpressionData data = (ExpressionData) AnalysisUtil.readExpressionData(
-				reader, inputFileName, new ExpressionDataCreator());
+		ExpressionData data = AnalysisUtil.readExpressionData(reader,
+				inputFileName);
 
-		String outputFileName = "out";
+		final Map featureName2Colors = new HashMap();
+		featureName2Colors.put("M31303_rna1_at", Arrays
+				.asList(new Color[] { Color.BLUE }));
 
-		String outputFileFormat = "jpeg";
-		int columnSize = 8;
-		int rowSize = 8;
+		DisplaySettings ds = new DisplaySettings();
 
-		int normalization = HeatMap.COLOR_RESPONSE_ROW;
-		boolean drawGrid = true;
-		Color gridLinesColor = Color.black;
+		FeatureAnnotator fa = new FeatureAnnotator() {
 
-		boolean drawRowNames = true;
-		boolean drawRowDescriptions = false;
-		List featureList = Arrays.asList(new String[] {"M31303_rna1_at", "Y08612_at", "L49229_f_at", "U20998_at", "U29175_at", "M91432_at", "X15949_at"});
-		Color featureListColor = Color.YELLOW;
+			public String getAnnotation(String feature, int j) {
+				return "test";
+			}
 
-		/*try {
-			HeatMap.createImage(data, outputFileName, outputFileFormat, columnSize,
-					rowSize, normalization, drawGrid, gridLinesColor, drawRowNames,
-					drawRowDescriptions, featureList, featureListColor);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		*/
+			public int getColumnCount() {
+				return 1;
+			}
+
+			public List getColors(String featureName) {
+				return (List) featureName2Colors.get(featureName);
+			}
+
+		};
+		HeatMap.saveImage(data, ds, fa, null, "out1", "png");
+
+		HeatMap.HeatMapImage result = HeatMap.createImage2(data, ds, null, fa);
+
+		String htmlMap = HeatMap.createHtmlImageMap(data.getRowCount(), data
+				.getColumnCount(), result, ds);
+
+		ImageUtil.saveImage(result.image, "out2", "png");
+
+		BufferedImage bi = HeatMap.createImage(data, ds, null, fa);
+		ImageUtil.saveImage(bi, "out3", "png");
+
 	}
 }
