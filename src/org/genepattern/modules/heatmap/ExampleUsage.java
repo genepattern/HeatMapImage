@@ -11,6 +11,7 @@ import org.genepattern.data.expr.ExpressionData;
 import org.genepattern.heatmap.image.DisplaySettings;
 import org.genepattern.heatmap.image.FeatureAnnotator;
 import org.genepattern.heatmap.image.HeatMap;
+import org.genepattern.heatmap.image.SampleAnnotator;
 import org.genepattern.io.expr.IExpressionDataReader;
 import org.genepattern.ioutil.ImageUtil;
 import org.genepattern.module.AnalysisUtil;
@@ -34,7 +35,8 @@ public class ExampleUsage {
 				.asList(new Color[] { Color.BLUE }));
 
 		DisplaySettings ds = new DisplaySettings();
-
+		ds.showFeatureGridLines = true;
+		ds.showColumnAnnotationGridLines = true;
 		FeatureAnnotator fa = new FeatureAnnotator() {
 
 			public String getAnnotation(String feature, int j) {
@@ -50,17 +52,41 @@ public class ExampleUsage {
 			}
 
 		};
-		HeatMap.saveImage(data, ds, fa, null, "out1", "png");
 
-		HeatMap.HeatMapImage result = HeatMap.createImage2(data, ds, null, fa);
+		SampleAnnotator sa = new SampleAnnotator() {
 
-		String htmlMap = HeatMap.createHtmlImageMap(data.getRowCount(), data
-				.getColumnCount(), result, ds);
+			public Color getPhenotypeColor(String sampleName) {
+				if (sampleName.toLowerCase().startsWith("all")) {
+					return Color.yellow;
+				}
+				return Color.RED;
+			}
 
-		ImageUtil.saveImage(result.image, "out2", "png");
+			public boolean hasPhenotypeColors() {
+				return false;
+			}
 
-		BufferedImage bi = HeatMap.createImage(data, ds, null, fa);
-		ImageUtil.saveImage(bi, "out3", "png");
+			public String getLabel(int i) {
+				return "test";
+			}
+
+			public List getColors(String sampleName) {
+				return Arrays.asList(new Color[] { Color.BLUE });
+			}
+
+		};
+		HeatMap.saveImage(data, ds, fa, sa, "out1", "png");
+
+		// HeatMap.HeatMapImage result = HeatMap.createImage2(data, ds, null,
+		// fa);
+
+		// String htmlMap = HeatMap.createHtmlImageMap(data.getRowCount(), data
+		// .getColumnCount(), result, ds);
+
+		// ImageUtil.saveImage(result.image, "out2", "png");
+
+		// BufferedImage bi = HeatMap.createImage(data, ds, null, fa);
+		// ImageUtil.saveImage(bi, "out3", "png");
 
 	}
 }
