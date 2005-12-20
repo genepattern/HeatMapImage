@@ -8,7 +8,7 @@ import java.util.Map;
 import org.genepattern.data.expr.IExpressionData;
 import org.genepattern.heatmap.image.DisplaySettings;
 import org.genepattern.heatmap.image.HeatMap;
-import org.genepattern.heatmap.RowColorConverter;
+import org.genepattern.heatmap.RowColorScheme;
 import org.genepattern.io.expr.IExpressionDataReader;
 import org.genepattern.module.AnalysisUtil;
 
@@ -83,16 +83,16 @@ public class RunHeatMapImage {
 				AnalysisUtil.exit("unknown option " + arg);
 			}
 		}
-		Color[] _colorMap = colorMap != null ? colorMap : RowColorConverter
+		Color[] _colorMap = colorMap != null ? colorMap : RowColorScheme
 				.getDefaultColorMap();
 		try {
 			DisplaySettings ds = new DisplaySettings();
 			ds.columnSize = columnWidth;
 			ds.rowSize = rowWidth;
 			if (normalization == HeatMap.COLOR_RESPONSE_ROW) {
-				ds.colorConverter = RowColorConverter.getRowInstance(_colorMap);
+				ds.colorConverter = RowColorScheme.getRowInstance(_colorMap);
 			} else {
-				ds.colorConverter = RowColorConverter
+				ds.colorConverter = RowColorScheme
 						.getGlobalInstance(_colorMap);
 			}
 			ds.drawGrid = showGridLines;
