@@ -9,7 +9,7 @@ import org.genepattern.data.expr.IExpressionData;
 import org.genepattern.heatmap.image.DisplaySettings;
 import org.genepattern.heatmap.image.HeatMap;
 import org.genepattern.heatmap.RowColorScheme;
-import org.genepattern.io.expr.IExpressionDataReader;
+import org.genepattern.io.expr.IExpressionDataParser;
 import org.genepattern.module.AnalysisUtil;
 
 public class RunHeatMapImage {
@@ -28,7 +28,7 @@ public class RunHeatMapImage {
 		String outputFileName = args[1];
 		String outputFileFormat = args[2];
 
-		IExpressionDataReader reader = AnalysisUtil
+		IExpressionDataParser reader = AnalysisUtil
 				.getExpressionReader(inputFileName);
 
 		IExpressionData data = AnalysisUtil.readExpressionData(reader,
