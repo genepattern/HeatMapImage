@@ -29,7 +29,7 @@ public class RunHeatMapImage {
 		String outputFileFormat = args[2];
 
 		IExpressionDataParser reader = AnalysisUtil
-				.getExpressionReader(inputFileName);
+				.getExpressionDataParser(inputFileName);
 
 		IExpressionData data = AnalysisUtil.readExpressionData(reader,
 				inputFileName);
