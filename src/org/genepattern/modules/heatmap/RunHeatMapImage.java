@@ -5,11 +5,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.genepattern.data.expr.IExpressionData;
+import org.genepattern.heatmap.RowColorScheme;
 import org.genepattern.heatmap.image.DisplaySettings;
 import org.genepattern.heatmap.image.HeatMap;
-import org.genepattern.heatmap.RowColorScheme;
-import org.genepattern.io.expr.IExpressionDataParser;
+import org.genepattern.io.DatasetParser;
+import org.genepattern.matrix.Dataset;
 import org.genepattern.module.AnalysisUtil;
 
 public class RunHeatMapImage {
@@ -28,10 +28,10 @@ public class RunHeatMapImage {
 		String outputFileName = args[1];
 		String outputFileFormat = args[2];
 
-		IExpressionDataParser reader = AnalysisUtil
-				.getExpressionDataParser(inputFileName);
+		DatasetParser reader = AnalysisUtil
+				.getDatasetParser(inputFileName);
 
-		IExpressionData data = AnalysisUtil.readExpressionData(reader,
+		Dataset data = AnalysisUtil.readDataset(reader,
 				inputFileName);
 
 		int columnWidth = 10;
