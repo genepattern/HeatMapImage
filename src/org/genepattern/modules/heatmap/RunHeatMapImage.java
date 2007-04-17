@@ -1,15 +1,26 @@
 package org.genepattern.modules.heatmap;
 
 import java.awt.Color;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.swing.JPanel;
+
+import org.genepattern.annotation.DefaultAnnotation;
+import org.genepattern.heatmap.HeatMap;
+import org.genepattern.heatmap.HeatMapElementPanel;
 import org.genepattern.heatmap.RowColorScheme;
-import org.genepattern.heatmap.image.DisplaySettings;
-import org.genepattern.heatmap.image.HeatMapImageDrawer;
 import org.genepattern.io.DatasetParser;
+import org.genepattern.io.DefaultDatasetCreator;
+import org.genepattern.io.ImageUtil;
+import org.genepattern.io.featureset.GrpIO;
 import org.genepattern.matrix.Dataset;
+import org.genepattern.matrix.FeatureSet;
 import org.genepattern.module.AnalysisUtil;
 
 public class RunHeatMapImage {
@@ -27,21 +38,20 @@ public class RunHeatMapImage {
         String inputFileName = args[0];
         String outputFileName = args[1];
         String outputFileFormat = args[2];
-
         DatasetParser reader = AnalysisUtil.getDatasetParser(inputFileName);
-
-        Dataset data = AnalysisUtil.readDataset(reader, inputFileName);
-
-        int columnWidth = 10;
-        int rowWidth = 10;
-        int normalization = HeatMapImageDrawer.COLOR_RESPONSE_ROW;
-        Color gridLinesColor = Color.black;
-        boolean showGridLines = false;
-        boolean showGeneAnnotations = false;
-        boolean showGeneNames = true;
-        java.util.List featureList = null;
-        Color highlightColor = Color.red;
+        DefaultDatasetCreator c = new DefaultDatasetCreator(true);
+        Dataset data = (Dataset) AnalysisUtil.readDataset(reader, inputFileName, c);
+        int columnSize = 10;
+        int rowSize = 10;
+        int normalization = HeatMapElementPanel.NORMALIZATION_ROW;
+        Color gridLinesColor = Color.BLACK;
+        boolean showGridLines = true;
+        boolean showRowDescriptions = true;
+        boolean showRowNames = true;
+        FeatureSet featureList = null;
+        Color featureListColor = Color.RED;
         Color[] colorMap = null;
+
         for (int i = 3; i < args.length; i++) { // 0th arg is input file name,
             // 1st arg is output file name,
             // 2nd arg is format
@@ -52,70 +62,130 @@ public class RunHeatMapImage {
             }
 
             if (arg.equals("-c")) {
-                columnWidth = Integer.parseInt(value);
+                columnSize = Integer.parseInt(value);
             } else if (arg.equals("-r")) {
-                rowWidth = Integer.parseInt(value);
+                rowSize = Integer.parseInt(value);
             } else if (arg.equals("-n")) {
                 if (value.equals("global")) {
-                    normalization = HeatMapImageDrawer.COLOR_RESPONSE_GLOBAL;
+                    normalization = HeatMapElementPanel.NORMALIZATION_GLOBAL;
                 } else if (value.equals("row normalized")) {
-                    normalization = HeatMapImageDrawer.COLOR_RESPONSE_ROW;
+                    normalization = HeatMapElementPanel.NORMALIZATION_ROW;
                 }
 
             } else if (arg.equals("-g")) {
                 showGridLines = "yes".equalsIgnoreCase(value);
             } else if (arg.equals("-l")) {
                 // r:g:b triplet
-                gridLinesColor = HeatMapImageDrawer.createColor(value);
+                gridLinesColor = createColor(value);
             } else if (arg.equals("-a")) {
-                showGeneAnnotations = "yes".equalsIgnoreCase(value);
+                showRowDescriptions = "yes".equalsIgnoreCase(value);
             } else if (arg.equals("-s")) {
-                showGeneNames = "yes".equalsIgnoreCase(value);
+                showRowNames = "yes".equalsIgnoreCase(value);
             } else if (arg.equals("-f")) {
-                featureList = AnalysisUtil.readFeatureList(value);
+                FileInputStream is = null;
+                try {
+                    is = new FileInputStream(value);
+                    FeatureSet[] s = new GrpIO().parse(is);
+                    if (s.length == 1) {
+                        featureList = s[0];
+                    }
+                } catch (IOException ioe) {
+                    AnalysisUtil.exit("An error occurred while reading the file " + new File(value).getName() + ".");
+                } finally {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+
+                        }
+                    }
+                }
+
             } else if (arg.equals("-h")) {
-                highlightColor = HeatMapImageDrawer.createColor(value);
+                featureListColor = createColor(value);
             } else if (arg.equals("-m")) {
-                colorMap = HeatMapImageDrawer.parseColorMap(value);
+                colorMap = parseColorMap(value);
             } else {
                 AnalysisUtil.exit("unknown option " + arg);
             }
         }
+        HeatMap heatMap = new HeatMap(new JPanel(), data);
+        heatMap.setSquareAspect(false);
+        heatMap.setColumnSize(columnSize);
+        heatMap.setRowSize(rowSize);
         Color[] _colorMap = colorMap != null ? colorMap : RowColorScheme.getDefaultColorMap();
+        if (normalization == HeatMapElementPanel.NORMALIZATION_ROW) {
+            heatMap.setColorScheme(RowColorScheme.getRowInstance(_colorMap));
+        } else {
+            heatMap.setColorScheme(RowColorScheme.getGlobalInstance(_colorMap));
+        }
+        heatMap.setDrawGrid(showGridLines);
+        heatMap.setGridColor(gridLinesColor);
+        heatMap.setRowNamesVisible(showRowNames);
+        heatMap.setRowDescriptionsVisible(showRowDescriptions);
+        if (featureList != null) {
+            DefaultAnnotation a = new DefaultAnnotation(featureList);
+            heatMap.getRowAnnotatorModel().addAnnotation(0, a);
+            heatMap.getRowAnnotatorColorModel().setColor(featureList.getName(), featureListColor);
+        }
         try {
-            DisplaySettings ds = new DisplaySettings();
-            ds.columnSize = columnWidth;
-            ds.rowSize = rowWidth;
-            if (normalization == HeatMapImageDrawer.COLOR_RESPONSE_ROW) {
-                ds.colorConverter = RowColorScheme.getRowInstance(_colorMap);
-            } else {
-                ds.colorConverter = RowColorScheme.getGlobalInstance(_colorMap);
-            }
-            ds.drawGrid = showGridLines;
-            ds.drawRowNames = showGeneNames;
-            ds.drawRowDescriptions = showGeneAnnotations;
-            ds.gridLinesColor = gridLinesColor;
-
-            Map featureNames2Colors = null;
-            if (featureList != null) {
-                featureNames2Colors = new HashMap();
-                for (int i = 0; i < featureList.size(); i++) {
-                    String name = (String) featureList.get(i);
-                    featureNames2Colors.put(name, highlightColor);
-                }
-
-            }
-            HeatMapImageDrawer.saveImage(data, ds, null, featureNames2Colors, outputFileName, outputFileFormat);
-        } catch (Exception e) {
-            if (e instanceof IOException || e instanceof RuntimeException) {
-                AnalysisUtil.exit(e.getMessage());
-            } else {
-                AnalysisUtil.exit("An error occurred while saving the image.");
-            }
+            ImageUtil.saveImage(heatMap, outputFileFormat, new File(outputFileName), true);
         } catch (OutOfMemoryError ome) {
             AnalysisUtil.exit("Not enough memory available to save the image.");
+        } catch (IOException e) {
+            AnalysisUtil.exit("An error occurred while saving the image.");
         }
 
+    }
+
+    public static Color createColor(String triplet) {
+        String[] rgb = triplet.split(":");
+        if (rgb.length != 3) {
+            throw new IllegalArgumentException("Invalid rgb triplet " + triplet);
+        }
+        int r = 0, g = 0, b = 0;
+        try {
+            r = Integer.parseInt(rgb[0]);
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Red component is not an integer " + triplet);
+        }
+        try {
+            g = Integer.parseInt(rgb[1]);
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Green component is not an integer " + triplet);
+        }
+        try {
+            b = Integer.parseInt(rgb[2]);
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Blue component is not an integer " + triplet);
+        }
+        return new Color(r, g, b);
+    }
+
+    public static Color[] parseColorMap(String fileName) {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(fileName));
+            String s = null;
+            List colors = new ArrayList();
+            while ((s = br.readLine()) != null) {
+                if (s.trim().equals("")) {
+                    continue;
+                }
+                Color c = createColor(s);
+                colors.add(c);
+            }
+            return (Color[]) colors.toArray(new Color[0]);
+        } catch (IOException ioe) {
+            return null;
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                }
+            }
+        }
     }
 
 }

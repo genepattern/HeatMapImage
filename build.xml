@@ -2,54 +2,57 @@
 <!-- Ant build file -->
 
 <project basedir="" default="package" name="HeatMapImage">
-	<property name="dirOffset" value="../"/>
-	<import file="${dirOffset}/commontargets.xml"/>
-	
+	<property name="dirOffset" value="../" />
+	<import file="${dirOffset}/commontargets.xml" />
+
 	<target name="_init" depends="init">
-		<property name="appfile" value="HeatMap.jar"/>
-		<property name="inclds" value="org/"/>
-		<patternset id="jar.files" includes="jai_codec.jar, jai_core.jar, broad-cg.jar, gp-modules.jar, Jama-1.0.1.jar, trove.jar, epsgraphics.jar"/>
+		<property name="appfile" value="HeatMap.jar" />
+		<property name="inclds" value="org/" />
 		<path id="library.classpath">
-			<fileset dir="${libpath}">
-				<patternset refid="jar.files"/>
-			</fileset>
+			<fileset id="jars.to.include" dir="${libpath}" includes="jai_codec.jar jai_core.jar
+				GeneCruiser.jar gp-modules.jar Jama-1.0.1.jar trove.jar freehep-base.jar
+				freehep-graphics2d.jar freehep-graphicsio.jar freehep-graphicsio-ps.jar" />
 		</path>
 	</target>
 
-	
+
 	<target name="package" depends="_init, clean, compile">
-		<jar basedir="." defaultexcludes="true" excludes="**/*.java, **/*.form, **/.nbattrs" includes="${inclds}" jarfile="${appfile}"></jar>
+		<jar basedir="." defaultexcludes="true" includes="${inclds}" jarfile="${appfile}">
+		</jar>
 	</target>
-	
+
 	<target name="clean">
 		<delete>
-			<fileset dir="." includes="**/*.class"/>
+			<fileset dir="." includes="**/*.class" />
 		</delete>
 	</target>
-	
+
 	<target name="compile" depends="_init">
 		<javac debug="true" defaultexcludes="true" deprecation="true" destdir="." includes="${inclds}" optimize="false" proceed="false" srcdir="src" target="${java.target}" source="${java.target}">
-			<classpath refid="library.classpath"/>
+			<classpath refid="library.classpath" />
 		</javac>
 	</target>
-   
 
-	
-	<target depends="clean,compile" name="build"/>
-	
+	<target depends="clean,compile" name="build" />
+
 	<target depends="_init, package" name="create-zip">
-		<antcall target="prezip"/>
-		
+		<antcall target="prezip" />
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-			<fileset dir="." includes="version.txt, manifest, ${appfile}"/>
-			<fileset dir="${libpath}">
-				<patternset refid="jar.files"/>
-			</fileset>
-			  
-			
-			<fileset dir="." includes="*.pdf"/>
+			<fileset dir="." includes="*.pdf, manifest, ${appfile}" />
+			<fileset refid="jars.to.include" />
 		</zip>
-		<antcall target="postzip"/>
+		<antcall target="postzip" />
+	</target>
+
+	<target depends="_init" name="run">
+		<java maxmemory="1024m" classname="org.genepattern.modules.heatmap.RunHeatMapImage" fork="true">
+			<sysproperty key="java.awt.headless" value="true" />
+			<arg value="/Users/jgould/datasets/all_aml_train.neighbors.gct" />
+			<arg value="out" />
+			<arg value="jpeg" />
+			<classpath refid="library.classpath" />
+			<classpath location="." />
+		</java>
 	</target>
 
 </project>

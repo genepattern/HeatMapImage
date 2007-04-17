@@ -4,7 +4,7 @@ p8_prefix_when_specified=
 p5_optional=
 p10_value=
 p6_type=java.lang.String
-commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>epsgraphics.jar<path.separator><libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.heatmap.RunHeatMapImage <input.filename> <output.file> <output.file.format> -c<row.size> -r<column.size> -g<grid> -l<grid.color> -a<row.annotations> -s<row.names> -f<feature.list.filename> -h<highlight.color> -n<color.scheme> -m<color.map.filename>
+commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.heatmap.RunHeatMapImage <input.filename> <output.file> <output.file.format> -c<row.size> -r<column.size> -g<grid> -l<grid.color> -a<row.annotations> -s<row.names> -f<feature.list.filename> -h<highlight.color> -n<color.scheme> -m<color.map.filename>
 description=Creates a heat map from a dataset
 p8_default_value=no
 p7_optional=on
@@ -56,7 +56,7 @@ p2_optional=
 p8_value=yes;no
 p5_default_value=8
 p9_type=java.lang.String
-publicationDate=09/29/2005 14\:45 
+publicationDate=09/29/2005 14\:45
 p2_prefix_when_specified=
 p4_optional=
 p13_value=
