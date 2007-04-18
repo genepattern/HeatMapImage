@@ -50,6 +50,7 @@
 			<arg value="/Users/jgould/datasets/all_aml_train.neighbors.gct" />
 			<arg value="out" />
 			<arg value="jpeg" />
+			<arg value="-f/Users/jgould/datasets/feature_list.txt" />
 			<classpath refid="library.classpath" />
 			<classpath location="." />
 		</java>

@@ -25,15 +25,15 @@ import org.genepattern.module.AnalysisUtil;
 
 public class RunHeatMapImage {
 
-    protected Color[] colorMap = null;
+    protected Color[] colorMap;
 
     protected int columnSize = 10;
 
     protected Dataset data;
 
-    protected FeatureSet featureList = null;
+    protected FeatureSet featureSet;
 
-    protected Color featureListColor = Color.RED;
+    protected Color featureSetColor = Color.RED;
 
     protected Color gridLinesColor = Color.BLACK;
 
@@ -92,9 +92,11 @@ public class RunHeatMapImage {
                 FileInputStream is = null;
                 try {
                     is = new FileInputStream(value);
-                    FeatureSet[] s = new GrpIO().parse(is);
+                    GrpIO grp = new GrpIO();
+                    grp.setName(value);
+                    FeatureSet[] s = grp.parse(is);
                     if (s.length == 1) {
-                        featureList = s[0];
+                        featureSet = s[0];
                     }
                 } catch (IOException ioe) {
                     AnalysisUtil.exit("An error occurred while reading the file " + new File(value).getName() + ".");
@@ -107,9 +109,8 @@ public class RunHeatMapImage {
                         }
                     }
                 }
-
             } else if (arg.equals("-h")) {
-                featureListColor = createColor(value);
+                featureSetColor = createColor(value);
             } else if (arg.equals("-m")) {
                 colorMap = parseColorMap(value);
             } else {
@@ -131,10 +132,16 @@ public class RunHeatMapImage {
         heatMap.setGridColor(gridLinesColor);
         heatMap.setRowNamesVisible(showRowNames);
         heatMap.setRowDescriptionsVisible(showRowDescriptions);
-        if (featureList != null) {
-            DefaultAnnotation a = new DefaultAnnotation(featureList);
+        if (featureSet != null) {
+            DefaultAnnotation a = new DefaultAnnotation(featureSet);
             heatMap.getRowAnnotatorModel().addAnnotation(0, a);
-            heatMap.getRowAnnotatorColorModel().setColor(featureList.getName(), featureListColor);
+            String[] categories = a.getCategories();
+            if (categories != null) {
+                for (int i = 0; i < categories.length; i++) {
+                    heatMap.getRowAnnotatorColorModel().setColor(categories[i], featureSetColor);
+                }
+            }
+
         }
         try {
             ImageUtil.saveImage(heatMap, outputFileFormat, new File(outputFileName), true);
