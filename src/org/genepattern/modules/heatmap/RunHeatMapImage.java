@@ -53,15 +53,11 @@ public class RunHeatMapImage {
 
     protected boolean showRowNames = true;
 
-    public RunHeatMapImage() {
-
-    }
-
     protected void parse(String[] args) {
-        String inputFileName = args[0];
-        String outputFileName = args[1];
-        String outputFileFormat = args[2];
-        data = parseDataset(inputFileName);
+        inputFileName = args[0];
+        outputFileName = args[1];
+        outputFileFormat = args[2];
+        data = parseDataset();
 
         for (int i = 3; i < args.length; i++) { // 0th arg is input file name,
             // 1st arg is output file name,
@@ -158,7 +154,7 @@ public class RunHeatMapImage {
         throw new IllegalArgumentException();
     }
 
-    protected Dataset parseDataset(String inputFileName) {
+    protected Dataset parseDataset() {
         DatasetParser reader = AnalysisUtil.getDatasetParser(inputFileName);
         DefaultDatasetCreator c = new DefaultDatasetCreator(true);
         return (Dataset) AnalysisUtil.readDataset(reader, inputFileName, c);
