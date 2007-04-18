@@ -25,32 +25,43 @@ import org.genepattern.module.AnalysisUtil;
 
 public class RunHeatMapImage {
 
-    /**
-     * Create a heatmap image from the command line <input.filename>
-     * <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
-     * <normalization> -grid <grid> -ra <show.row.descriptions> -p
-     * <show.row.ids>
-     *
-     * @param args
-     *            The command line arguments
-     */
-    public static void main(String[] args) {
+    protected Color[] colorMap = null;
+
+    protected int columnSize = 10;
+
+    protected Dataset data;
+
+    protected FeatureSet featureList = null;
+
+    protected Color featureListColor = Color.RED;
+
+    protected Color gridLinesColor = Color.BLACK;
+
+    protected String inputFileName;
+
+    protected int normalization = HeatMapElementPanel.NORMALIZATION_ROW;
+
+    protected String outputFileFormat;
+
+    protected String outputFileName;
+
+    protected int rowSize = 10;
+
+    protected boolean showGridLines = true;
+
+    protected boolean showRowDescriptions = true;
+
+    protected boolean showRowNames = true;
+
+    public RunHeatMapImage() {
+
+    }
+
+    protected void parse(String[] args) {
         String inputFileName = args[0];
         String outputFileName = args[1];
         String outputFileFormat = args[2];
-        DatasetParser reader = AnalysisUtil.getDatasetParser(inputFileName);
-        DefaultDatasetCreator c = new DefaultDatasetCreator(true);
-        Dataset data = (Dataset) AnalysisUtil.readDataset(reader, inputFileName, c);
-        int columnSize = 10;
-        int rowSize = 10;
-        int normalization = HeatMapElementPanel.NORMALIZATION_ROW;
-        Color gridLinesColor = Color.BLACK;
-        boolean showGridLines = true;
-        boolean showRowDescriptions = true;
-        boolean showRowNames = true;
-        FeatureSet featureList = null;
-        Color featureListColor = Color.RED;
-        Color[] colorMap = null;
+        data = parseDataset(inputFileName);
 
         for (int i = 3; i < args.length; i++) { // 0th arg is input file name,
             // 1st arg is output file name,
@@ -106,10 +117,11 @@ public class RunHeatMapImage {
             } else if (arg.equals("-m")) {
                 colorMap = parseColorMap(value);
             } else {
-                AnalysisUtil.exit("unknown option " + arg);
+                parseArg(arg, value);
             }
         }
-        HeatMap heatMap = new HeatMap(new JPanel(), data);
+
+        HeatMap heatMap = createHeatMap();
         heatMap.setSquareAspect(false);
         heatMap.setColumnSize(columnSize);
         heatMap.setRowSize(rowSize);
@@ -138,6 +150,21 @@ public class RunHeatMapImage {
 
     }
 
+    protected HeatMap createHeatMap() {
+        return new HeatMap(new JPanel(), data);
+    }
+
+    protected void parseArg(String arg, String value) {
+        throw new IllegalArgumentException();
+    }
+
+    protected Dataset parseDataset(String inputFileName) {
+        DatasetParser reader = AnalysisUtil.getDatasetParser(inputFileName);
+        DefaultDatasetCreator c = new DefaultDatasetCreator(true);
+        return (Dataset) AnalysisUtil.readDataset(reader, inputFileName, c);
+
+    }
+
     public static Color createColor(String triplet) {
         String[] rgb = triplet.split(":");
         if (rgb.length != 3) {
@@ -160,6 +187,19 @@ public class RunHeatMapImage {
             throw new IllegalArgumentException("Blue component is not an integer " + triplet);
         }
         return new Color(r, g, b);
+    }
+
+    /**
+     * Create a heatmap image from the command line <input.filename>
+     * <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
+     * <normalization> -grid <grid> -ra <show.row.descriptions> -p
+     * <show.row.ids>
+     *
+     * @param args
+     *            The command line arguments
+     */
+    public static void main(String[] args) {
+        new RunHeatMapImage().parse(args);
     }
 
     public static Color[] parseColorMap(String fileName) {
