@@ -51,6 +51,7 @@
 			<arg value="out" />
 			<arg value="jpeg" />
 			<arg value="-f/Users/jgould/datasets/feature_list.txt" />
+			<arg value="-h100:12:12" />
 			<classpath refid="library.classpath" />
 			<classpath location="." />
 		</java>
