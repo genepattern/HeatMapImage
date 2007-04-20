@@ -4,7 +4,7 @@ p8_prefix_when_specified=
 p5_optional=
 p10_value=
 p6_type=java.lang.String
-commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.heatmap.RunHeatMapImage <input.filename> <output.file> <output.file.format> -c<row.size> -r<column.size> -g<grid> -l<grid.color> -a<row.annotations> -s<row.names> -f<feature.list.filename> -h<highlight.color> -n<color.scheme> -m<color.map.filename>
+commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar edu.mit.broad.modules.heatmap.RunHeatMapImage <input.filename> <output.file> <output.file.format> -c<row.size> -r<column.size> -g<grid> -l<grid.color> -a<row.descriptions> -s<row.names> -f<feature.list.filename> -h<highlight.color> -n<color.scheme> -m<color.map.filename>
 description=Creates a heat map from a dataset
 p8_default_value=no
 p7_optional=on
@@ -15,7 +15,7 @@ p12_name=color.scheme
 p6_name=grid
 p1_prefix_when_specified=
 p11_prefix_when_specified=
-p8_description=Whether to draw row annotations
+p8_description=Whether to draw row descriptions
 p10_description=Features to highlight in the heat map
 p13_type=java.io.File
 LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00032\:999999999
@@ -46,7 +46,7 @@ p9_prefix_when_specified=
 os=any
 p11_default_value=
 p3_default_value=jpeg
-p8_name=row.annotations
+p8_name=row.descriptions
 cpuType=any
 p1_name=input.filename
 p7_default_value=black
