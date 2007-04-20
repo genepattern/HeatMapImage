@@ -163,9 +163,7 @@ public class RunHeatMapImage {
 
     protected Dataset parseDataset() {
         DatasetParser reader = AnalysisUtil.getDatasetParser(inputFileName);
-        DefaultDatasetCreator c = new DefaultDatasetCreator(true);
-        return (Dataset) AnalysisUtil.readDataset(reader, inputFileName, c);
-
+        return AnalysisUtil.readDataset(reader, inputFileName, true);
     }
 
     public static Color createColor(String triplet) {
