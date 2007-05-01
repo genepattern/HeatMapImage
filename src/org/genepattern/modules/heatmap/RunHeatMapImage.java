@@ -16,7 +16,6 @@ import org.genepattern.heatmap.HeatMap;
 import org.genepattern.heatmap.HeatMapElementPanel;
 import org.genepattern.heatmap.RowColorScheme;
 import org.genepattern.io.DatasetParser;
-import org.genepattern.io.DefaultDatasetCreator;
 import org.genepattern.io.ImageUtil;
 import org.genepattern.io.featureset.GrpIO;
 import org.genepattern.matrix.Dataset;

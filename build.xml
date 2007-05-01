@@ -9,9 +9,9 @@
 		<property name="appfile" value="HeatMap.jar" />
 		<property name="inclds" value="org/" />
 		<path id="library.classpath">
-			<fileset id="jars.to.include" dir="${libpath}" includes="jai_codec.jar jai_core.jar
-				GeneCruiser.jar gp-modules.jar Jama-1.0.1.jar trove.jar freehep-base.jar
-				freehep-graphics2d.jar freehep-graphicsio.jar freehep-graphicsio-ps.jar" />
+			<fileset id="jars.to.include" dir="${libpath}" includes="
+				GeneCruiser.jar gp-modules.jar forms-* Jama-1.0.1.jar trove.jar" />
+			<fileset refid="image.jars" />
 		</path>
 	</target>
 
@@ -40,6 +40,7 @@
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
 			<fileset dir="." includes="*.pdf, manifest, ${appfile}" />
 			<fileset refid="jars.to.include" />
+			<fileset refid="image.jars" />
 		</zip>
 		<antcall target="postzip" />
 	</target>
