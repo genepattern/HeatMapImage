@@ -14,7 +14,7 @@ import javax.swing.JPanel;
 import org.genepattern.annotation.DefaultAnnotation;
 import org.genepattern.heatmap.HeatMap;
 import org.genepattern.heatmap.HeatMapElementPanel;
-import org.genepattern.heatmap.RowColorScheme;
+import org.genepattern.heatmap.DefaultColorScheme;
 import org.genepattern.io.DatasetParser;
 import org.genepattern.io.ImageUtil;
 import org.genepattern.io.featureset.GrpIO;
@@ -121,11 +121,11 @@ public class RunHeatMapImage {
         heatMap.setSquareAspect(false);
         heatMap.setColumnSize(columnSize);
         heatMap.setRowSize(rowSize);
-        Color[] _colorMap = colorMap != null ? colorMap : RowColorScheme.getDefaultColorMap();
+        Color[] _colorMap = colorMap != null ? colorMap : DefaultColorScheme.getDefaultColorMap();
         if (normalization == HeatMapElementPanel.NORMALIZATION_ROW) {
-            heatMap.setColorScheme(RowColorScheme.getRowInstance(_colorMap));
+            heatMap.setColorScheme(DefaultColorScheme.getRowInstance(_colorMap));
         } else {
-            heatMap.setColorScheme(RowColorScheme.getGlobalInstance(_colorMap));
+            heatMap.setColorScheme(DefaultColorScheme.getGlobalInstance(_colorMap));
         }
         heatMap.setDrawGrid(showGridLines);
         heatMap.setGridColor(gridLinesColor);
