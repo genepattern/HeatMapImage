@@ -82,7 +82,7 @@ public class RunHeatMapImage {
                 showGridLines = "yes".equalsIgnoreCase(value);
             } else if (arg.equals("-l")) {
                 // r:g:b triplet
-                gridLinesColor = createColor(value);
+                gridLinesColor = ImageUtil.decodeRGBTriplet(value);
             } else if (arg.equals("-a")) {
                 showRowDescriptions = "yes".equalsIgnoreCase(value);
             } else if (arg.equals("-s")) {
@@ -109,9 +109,13 @@ public class RunHeatMapImage {
                     }
                 }
             } else if (arg.equals("-h")) {
-                featureSetColor = createColor(value);
+                featureSetColor = ImageUtil.decodeRGBTriplet(value);
             } else if (arg.equals("-m")) {
-                colorMap = parseColorMap(value);
+                try {
+                    colorMap = parseColorMap(value);
+                } catch (NumberFormatException nfe) {
+                    AnalysisUtil.exit("An error occurred while parsing the color palette.");
+                }
             } else {
                 parseArg(arg, value);
             }
@@ -165,30 +169,6 @@ public class RunHeatMapImage {
         return AnalysisUtil.readDataset(reader, inputFileName, true);
     }
 
-    public static Color createColor(String triplet) {
-        String[] rgb = triplet.split(":");
-        if (rgb.length != 3) {
-            throw new IllegalArgumentException("Invalid rgb triplet " + triplet);
-        }
-        int r = 0, g = 0, b = 0;
-        try {
-            r = Integer.parseInt(rgb[0]);
-        } catch (NumberFormatException nfe) {
-            throw new IllegalArgumentException("Red component is not an integer " + triplet);
-        }
-        try {
-            g = Integer.parseInt(rgb[1]);
-        } catch (NumberFormatException nfe) {
-            throw new IllegalArgumentException("Green component is not an integer " + triplet);
-        }
-        try {
-            b = Integer.parseInt(rgb[2]);
-        } catch (NumberFormatException nfe) {
-            throw new IllegalArgumentException("Blue component is not an integer " + triplet);
-        }
-        return new Color(r, g, b);
-    }
-
     /**
      * Create a heatmap image from the command line <input.filename>
      * <output.filename> <output.format> -cw <column.size> -rw <row.size> -norm
@@ -202,20 +182,20 @@ public class RunHeatMapImage {
         new RunHeatMapImage().parse(args);
     }
 
-    public static Color[] parseColorMap(String fileName) {
+    private static Color[] parseColorMap(String fileName) {
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(fileName));
             String s = null;
-            List colors = new ArrayList();
+            List<Color> colors = new ArrayList<Color>();
             while ((s = br.readLine()) != null) {
                 if (s.trim().equals("")) {
                     continue;
                 }
-                Color c = createColor(s);
+                Color c = ImageUtil.decodeColor(s);
                 colors.add(c);
             }
-            return (Color[]) colors.toArray(new Color[0]);
+            return colors.toArray(new Color[0]);
         } catch (IOException ioe) {
             return null;
         } finally {

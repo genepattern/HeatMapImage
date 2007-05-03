@@ -1,6 +1,6 @@
 #Thu Sep 29 14:45:04 EDT 2005
 author=Joshua Gould, Broad Institute
-commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.heatmap.RunHeatMapImage <input.dataset> <output> <output.format> -c<row.size> -r<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -f<rows.to.highlight> -h<row.highlight.color> -n<color.scheme> -m<color.map>
+commandLine=<java> -Djava.awt.headless\=true <java_flags> -cp <libdir>HeatMap.jar<path.separator><libdir>gp-modules.jar org.genepattern.modules.heatmap.RunHeatMapImage <input.dataset> <output> <output.format> -c<row.size> -r<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -f<rows.to.highlight> -h<row.highlight.color> -n<color.scheme> -m<color.palette>
 cpuType=any
 description=Creates a heat map from a dataset
 fileFormat=jpeg;png;tiff;bmp;eps
@@ -118,9 +118,9 @@ p12_type=java.lang.String
 p12_value=row normalized;global
 
 p13_default_value=
-p13_description=Color map file
+p13_description=Color palette consisting of one r:g:b triplet or one hex value per line
 p13_MODE=IN
-p13_name=color.map
+p13_name=color.palette
 p13_optional=on
 p13_prefix_when_specified=
 p13_TYPE=FILE
