@@ -14,7 +14,7 @@ publicationDate=09/29/2005 14\:45
 quality=production
 taskType=Image Creators
 userid=gp-help@broad.mit.edu
-version=Allow duplicate names
+version=Added color palette parameter
 
 p1_default_value=
 p1_description=The input dataset - .res, .gct, .odf
