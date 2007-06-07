@@ -109,7 +109,7 @@ public class RunHeatMapImage {
                     }
                 }
             } else if (arg.equals("-h")) {
-                featureSetColor = ImageUtil.decodeRGBTriplet(value);
+                featureSetColor = ImageUtil.decodeColor(value);
             } else if (arg.equals("-m")) {
                 try {
                     colorMap = parseColorMap(value);
