@@ -3,49 +3,45 @@
 
 <project basedir="" default="package" name="HeatMapImage">
 	<property name="dirOffset" value="../" />
+	<property name="UNOPTIMIZED_JAR" value="heatmapimage.jar" />
+	<property name="OPTIMIZED_JAR" value="heatmapimage-o.jar" />
 	<import file="${dirOffset}/commontargets.xml" />
 
-	<target name="_init" depends="init">
-		<property name="appfile" value="HeatMap.jar" />
-		<property name="inclds" value="org/" />
-		<path id="library.classpath">
-			<fileset id="jars.to.include" dir="${libpath}" includes="
-				GeneCruiser.jar gp-modules.jar forms-* Jama-1.0.1.jar trove.jar" />
-			<fileset refid="image.jars" />
-		</path>
-	</target>
+	<target name="package" depends="init" description="Builds unoptimzed jar file">
+		<fileset id="jars.to.include" dir="${libpath}" includes="
+							GeneCruiser.jar gp-modules.jar forms-* Jama-1.0.1.jar trove.jar" />
 
-
-	<target name="package" depends="_init, clean, compile">
-		<jar basedir="." defaultexcludes="true" includes="${inclds}" jarfile="${appfile}">
+		<delete file="${UNOPTIMIZED_JAR}" />
+		<jar destfile="${UNOPTIMIZED_JAR}">
+			<zipgroupfileset refid="genecruiser.jars" />
+			<zipgroupfileset refid="image.jars" />
+			<zipgroupfileset refid="jars.to.include" />
+			<manifest>
+				<attribute name="Main-Class" value="org.genepattern.module.heatmapimage.RunHeatMapImage" />
+			</manifest>
 		</jar>
 	</target>
 
-	<target name="clean">
-		<delete>
-			<fileset dir="." includes="**/*.class" />
-		</delete>
+	<target name="package-o" depends="package" description="Builds shrunk jar file">
+		<delete file="../${OPTIMIZED_JAR}" />
+		<java maxmemory="1024m" classname="jshrink.Jshrink" fork="true">
+			<arg line="${UNOPTIMIZED_JAR} -o ../${OPTIMIZED_JAR} -license '12/25/2006 Stan Diamond ZEGRNVXBJLIAEIKM' -keepPublic -keepPackage -keepPrivate -keepProtected -noRenameClasses -noRenamePackage -noRenamePath -noRenamePrivate -noRenameProtected -noRenamePublic -keep 'org.apache.axis.?' -keep 'org.genepattern.io.?' -keep 'org.freehep.graphicsio.?' -keep 'javax.media.jai.?' -keep 'javax.media.?' -keep 'com.sun.media.jai.?'" />
+			<classpath>
+				<pathelement location="../lib/jshrink.jar" />
+			</classpath>
+		</java>
 	</target>
 
-	<target name="compile" depends="_init">
-		<javac debug="true" defaultexcludes="true" deprecation="true" destdir="." includes="${inclds}" optimize="false" proceed="false" srcdir="src" target="${java.target}" source="${java.target}">
-			<classpath refid="library.classpath" />
-		</javac>
-	</target>
-
-	<target depends="clean,compile" name="build" />
-
-	<target depends="_init, package" name="create-zip">
+	<target depends="package-o" name="create-zip">
 		<antcall target="prezip" />
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-			<fileset dir="." includes="*.pdf, manifest, ${appfile}" />
-			<fileset refid="jars.to.include" />
-			<fileset refid="image.jars" />
+			<fileset dir="." includes="manifest, *.pdf" />
+			<fileset dir=".." includes="${OPTIMIZED_JAR}" />
 		</zip>
 		<antcall target="postzip" />
 	</target>
 
-	<target depends="_init" name="run">
+	<target name="run">
 		<java maxmemory="1024m" classname="org.genepattern.modules.heatmap.RunHeatMapImage" fork="true">
 			<sysproperty key="java.awt.headless" value="true" />
 			<arg value="/Users/jgould/datasets/all_aml_train.neighbors.gct" />
@@ -53,8 +49,7 @@
 			<arg value="jpeg" />
 			<arg value="-f/Users/jgould/datasets/feature_list.txt" />
 			<arg value="-h100:12:12" />
-			<classpath refid="library.classpath" />
-			<classpath location="." />
+			<classpath location="${UNOPTIMIZED_JAR}" />
 		</java>
 	</target>
 
