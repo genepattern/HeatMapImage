@@ -8,8 +8,7 @@
 	<import file="${dirOffset}/commontargets.xml" />
 
 	<target name="package" depends="init" description="Builds unoptimzed jar file">
-		<fileset id="jars.to.include" dir="${libpath}" includes="
-							GeneCruiser.jar gp-modules.jar forms-* Jama-1.0.1.jar trove.jar" />
+		<fileset id="jars.to.include" dir="${libpath}" includes="gp-modules.jar forms-* Jama-1.0.1.jar trove.jar" />
 
 		<delete file="${UNOPTIMIZED_JAR}" />
 		<jar destfile="${UNOPTIMIZED_JAR}">
