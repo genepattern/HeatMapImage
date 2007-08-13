@@ -1,6 +1,6 @@
 #Thu Sep 29 14:45:04 EDT 2005
 author=Joshua Gould, Broad Institute
-commandLine=<java> -Djava.awt.headless\=true <java_flags> -jar <libdir>heatmapimage-o.jar <input.dataset> <output> <output.format> -c<row.size> -r<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -f<rows.to.highlight> -h<row.highlight.color> -n<color.scheme> -m<color.palette>
+commandLine=<java> -Djava.awt.headless\=true <java_flags> -jar <libdir>heatmapimage-o.jar <input.dataset> <output> <output.format> -c<row.size> -r<column.size> -g<show.grid> -l<grid.color> -a<show.row.descriptions> -s<show.row.names> -f<rows.to.highlight> -h<row.highlight.color> -n<color.scheme> -m<color.palette> -u<use.color.gradient>
 cpuType=any
 description=Creates a heat map from a dataset
 fileFormat=jpeg;png;tiff;bmp;eps
@@ -126,4 +126,14 @@ p13_prefix_when_specified=
 p13_TYPE=FILE
 p13_type=java.io.File
 p13_value=
+
+p14_default_value=no
+p14_description=Whether to use a linear color gradient or discrete colors
+p14_name=use.color.gradient
+p14_optional=on
+p14_prefix_when_specified=
+p14_type=java.lang.String
+p14_value=yes;no
+
+
 
