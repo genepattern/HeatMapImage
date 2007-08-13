@@ -41,7 +41,7 @@
 	</target>
 
 	<target name="run">
-		<java maxmemory="1024m" classname="org.genepattern.modules.heatmap.RunHeatMapImage" fork="true">
+		<java maxmemory="1024m" classname="org.genepattern.module.heatmapimage.RunHeatMapImage" fork="true">
 			<sysproperty key="java.awt.headless" value="true" />
 			<arg value="/Users/jgould/datasets/all_aml_train.neighbors.gct" />
 			<arg value="out" />
