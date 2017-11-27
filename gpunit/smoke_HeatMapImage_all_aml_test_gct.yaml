@@ -1,0 +1,23 @@
+name: HeatMapImage - smoke test
+description: Runs HeatMapImage with all_aml_test
+module: HeatMapViewer
+params:
+    input.dataset: "input/all_aml_test.preprocessed.gct"
+    output: "<input.dataset_basename>"
+    output.format: "jpeg"
+    column.size: "8"
+    row.size: "8"
+    show.grid: "yes"
+    grid.color: "black"
+    show.row.descriptions: "no"
+    show.row.names: "yes"
+    rows.to.highlight: 
+    row.highlight.color: "red"
+    color.scheme: "row normalized"
+    color.palette: ""
+    use.color.gradient: "no"
+
+assertions:
+	numFiles: 1
+    files: 
+        "all_aml_test.preprocessed.jpeg" !!null
