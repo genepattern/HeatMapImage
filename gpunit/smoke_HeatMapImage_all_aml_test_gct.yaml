@@ -18,6 +18,6 @@ params:
     use.color.gradient: "no"
 
 assertions:
-	numFiles: 1
+    numFiles: 1
     files: 
         "all_aml_test.preprocessed.jpeg" !!null
