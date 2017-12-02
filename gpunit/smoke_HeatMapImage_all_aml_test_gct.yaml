@@ -1,6 +1,6 @@
 name: HeatMapImage - smoke test
 description: Runs HeatMapImage with all_aml_test
-module: HeatMapViewer
+module: HeatMapImage
 params:
     input.dataset: "Input/all_aml_test.preprocessed.gct"
     output: "<input.dataset_basename>"
