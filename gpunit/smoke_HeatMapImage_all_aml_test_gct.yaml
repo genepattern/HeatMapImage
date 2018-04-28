@@ -14,7 +14,7 @@ params:
     rows.to.highlight: 
     row.highlight.color: "red"
     color.scheme: "row normalized"
-    color.palette: ""
+    # color.palette: ""
     use.color.gradient: "no"
 
 assertions:
